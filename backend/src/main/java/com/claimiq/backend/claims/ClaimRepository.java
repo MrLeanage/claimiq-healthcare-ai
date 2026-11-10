@@ -1,0 +1,4 @@
+package com.claimiq.backend.claims;
+import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+public interface ClaimRepository extends JpaRepository<Claim,UUID> {}
