@@ -1,6 +1,20 @@
 package com.claimiq.backend.claims;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
-public record ClaimResponse(UUID id,String claimNumber,String patientReference,String providerReference,BigDecimal amount,String currency,LocalDate serviceDate,ClaimStatus status,Instant createdAt,Instant updatedAt,Instant submittedAt,long version) {}
+
+public record ClaimResponse(
+        UUID id,
+        String claimNumber,
+        String patientReference,
+        String providerReference,
+        BigDecimal amount,
+        String currency,
+        LocalDate serviceDate,
+        ClaimStatus status,
+        Instant createdAt,
+        Instant updatedAt,
+        Instant submittedAt,
+        long version) {}
