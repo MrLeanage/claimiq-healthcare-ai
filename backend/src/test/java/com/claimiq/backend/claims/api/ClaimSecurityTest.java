@@ -52,6 +52,16 @@ class ClaimSecurityTest {
     }
 
     @Test
+    void paddedIdentitySubjectsAreRejected() throws Exception {
+        assertEquals(
+                403,
+                mvc.perform(get("/api/v1/claims").with(user("alice ", "claims:read")))
+                        .andReturn()
+                        .getResponse()
+                        .getStatus());
+    }
+
+    @Test
     void scopesOwnershipVersionsAndAuditAreEnforced() throws Exception {
         String owner = "alice-" + UUID.randomUUID();
         var created =

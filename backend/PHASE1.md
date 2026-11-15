@@ -72,7 +72,8 @@ The API accepts JWT bearer tokens only. Configure:
 The decoder verifies the issuer, audience, signature, and normal JWT timestamps.
 The provider must grant `claims:read`, `claims:write`, or `claims:review` through
 the standard `scope`/`scp` claim. Tokens need a stable, nonblank `sub` of at most
-255 characters. Users cannot supply or change a claim's owner through the API.
+255 characters, without surrounding whitespace. Users cannot supply or change a
+claim's owner through the API.
 
 If issuer or audience is unset, the application starts but rejects all bearer
 tokens. There are no hardcoded development passwords or anonymous claim routes.
@@ -104,6 +105,8 @@ part of the PR.
 - V2 converts legacy UTC `datetime2(6)` fields to `datetimeoffset(7)` and rebuilds
   the affected index. Review the UTC assumption before upgrading imported data.
 - V3 adds ownership and transactional audit storage.
+- V4 stores identity subjects as Unicode with binary, case-sensitive comparison,
+  independent of the server's default collation.
 
 Historical rows have no owner. Only reviewers can read them; users cannot edit or
 submit them until an administrator explicitly reconciles ownership. Never assign

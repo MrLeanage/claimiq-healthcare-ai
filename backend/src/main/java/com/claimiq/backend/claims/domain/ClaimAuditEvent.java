@@ -16,6 +16,7 @@ public class ClaimAuditEvent {
     private UUID claimId;
 
     @Column(nullable = false, updatable = false, length = 255)
+    @org.hibernate.annotations.Nationalized
     private String actorSubject;
 
     @Column(nullable = false, updatable = false, length = 32)

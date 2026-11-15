@@ -19,7 +19,10 @@ public class JwtClaimAccessPolicy implements ClaimAccessPolicy {
             throw new AccessDeniedException("JWT authentication is required");
         }
         String subject = authentication.getName();
-        if (subject == null || subject.isBlank() || subject.length() > 255) {
+        if (subject == null
+                || subject.isBlank()
+                || !subject.equals(subject.strip())
+                || subject.length() > 255) {
             throw new AccessDeniedException("A valid subject is required");
         }
         return authentication;
@@ -28,7 +31,10 @@ public class JwtClaimAccessPolicy implements ClaimAccessPolicy {
     @Override
     public String subject() {
         String subject = authentication().getName();
-        if (subject == null || subject.isBlank() || subject.length() > 255) {
+        if (subject == null
+                || subject.isBlank()
+                || !subject.equals(subject.strip())
+                || subject.length() > 255) {
             throw new AccessDeniedException("A valid subject is required");
         }
         return subject;

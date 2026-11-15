@@ -54,7 +54,7 @@ class ClaimSqlServerIT {
         if (adminUrl == null || !adminUrl.startsWith("jdbc:sqlserver://")) {
             throw new IllegalStateException(
                     "Set CLAIMIQ_IT_ADMIN_URL for a SQL Server test account with CREATE DATABASE"
-                        + " permission");
+                            + " permission");
         }
         username = System.getenv().getOrDefault("CLAIMIQ_IT_USERNAME", "");
         password = System.getenv().getOrDefault("CLAIMIQ_IT_PASSWORD", "");
@@ -161,6 +161,50 @@ VALUES ('11111111-1111-1111-1111-111111111111', 'CLM-LEGACY', 'PAT-DEMO',
     private ClaimRequest request(String amount) {
         return new ClaimRequest(
                 "PAT-DEMO", "PROV-DEMO", new BigDecimal(amount), "USD", LocalDate.of(2026, 1, 1));
+    }
+
+    @Test
+    void ownershipUsesExactCaseSensitiveUnicodeSubjects() {
+        String suffix = UUID.randomUUID().toString();
+        var token =
+                Jwt.withTokenValue("test-only")
+                        .header("alg", "RS256")
+                        .subject("CaseOwner-" + suffix)
+                        .build();
+        SecurityContextHolder.getContext()
+                .setAuthentication(
+                        new JwtAuthenticationToken(
+                                token, List.of(new SimpleGrantedAuthority("SCOPE_claims:write"))));
+        var owned = service.create(request("125.00"));
+        token =
+                Jwt.withTokenValue("test-only")
+                        .header("alg", "RS256")
+                        .subject("caseowner-" + suffix)
+                        .build();
+        SecurityContextHolder.getContext()
+                .setAuthentication(
+                        new JwtAuthenticationToken(
+                                token, List.of(new SimpleGrantedAuthority("SCOPE_claims:write"))));
+        assertEquals(
+                0,
+                service.list(org.springframework.data.domain.PageRequest.of(0, 20))
+                        .getTotalElements());
+        assertThrows(
+                com.claimiq.backend.claims.exception.ClaimNotFoundException.class,
+                () -> service.get(owned.id()));
+        token =
+                Jwt.withTokenValue("test-only")
+                        .header("alg", "RS256")
+                        .subject("用户-" + suffix)
+                        .build();
+        SecurityContextHolder.getContext()
+                .setAuthentication(
+                        new JwtAuthenticationToken(
+                                token, List.of(new SimpleGrantedAuthority("SCOPE_claims:write"))));
+        var unicodeOwned = service.create(request("125.00"));
+        assertEquals(
+                "用户-" + suffix, claims.findById(unicodeOwned.id()).orElseThrow().getOwnerSubject());
+        assertEquals(unicodeOwned.id(), service.get(unicodeOwned.id()).id());
     }
 
     @Test

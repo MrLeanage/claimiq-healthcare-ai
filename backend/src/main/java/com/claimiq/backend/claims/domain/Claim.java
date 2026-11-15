@@ -47,6 +47,7 @@ public class Claim {
     private Instant submittedAt;
 
     @Column(length = 255, updatable = false)
+    @org.hibernate.annotations.Nationalized
     private String ownerSubject;
 
     @Version private long version;
