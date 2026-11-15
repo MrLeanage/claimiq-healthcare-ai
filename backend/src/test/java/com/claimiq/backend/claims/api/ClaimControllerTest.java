@@ -7,13 +7,17 @@ import com.claimiq.backend.claims.dto.ClaimResponse;
 import com.claimiq.backend.claims.service.ClaimService;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.UUID;
 
+@ExtendWith(MockitoExtension.class)
 class ClaimControllerTest {
+    @Mock private ClaimService service;
     @Test
     void delegatesToTheServiceContract() {
-        ClaimService service = mock(ClaimService.class);
         ClaimController controller = new ClaimController(service);
         UUID id = UUID.randomUUID();
         ClaimResponse response =

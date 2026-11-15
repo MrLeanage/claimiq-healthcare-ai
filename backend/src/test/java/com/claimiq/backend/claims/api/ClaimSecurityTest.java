@@ -27,9 +27,9 @@ class ClaimSecurityTest {
     private final JsonMapper json = JsonMapper.builder().build();
     private static final String REQUEST =
             """
-            {"patientReference":"PAT-DEMO","providerReference":"PROV-DEMO",
-             "amount":125.50,"currency":"USD","serviceDate":"2026-01-01"}
-            """;
+{"patientReference":"PAT-DEMO","providerReference":"PROV-DEMO",
+ "amount":125.50,"currency":"USD","serviceDate":"2026-01-01","context":{"insurance":{"payerName":"Demo payer","planReference":"PLAN-DEMO","memberReference":"MEM-DEMO","coverageStatus":"UNKNOWN","coverageVerifiedOn":null,"authorizationStatus":"NOT_REQUIRED","authorizationReference":null},"diagnosisCodes":["Z00.00"],"serviceLines":[{"codeSystem":"LOCAL","procedureCode":"DEMO-001","description":"Synthetic consultation","units":1,"unitPrice":125.5}],"clinicalSummary":"Synthetic clinical context"}}
+""";
 
     private JwtRequestPostProcessor user(String name, String... scopes) {
         return jwt().jwt(token -> token.subject(name))
@@ -38,6 +38,36 @@ class ClaimSecurityTest {
                                 .map(scope -> new SimpleGrantedAuthority("SCOPE_" + scope))
                                 .toArray(
                                         org.springframework.security.core.GrantedAuthority[]::new));
+    }
+
+    @Test
+    void mismatchedServiceTotalsAreRejectedByTheApi() throws Exception {
+        assertEquals(
+                400,
+                mvc.perform(
+                                post("/api/v1/claims")
+                                        .with(user("mismatch-writer", "claims:write"))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                REQUEST.replace(
+                                                        "\"amount\":125.50", "\"amount\":125.49")))
+                        .andReturn()
+                        .getResponse()
+                        .getStatus());
+    }
+
+    @Test
+    void apiDocumentationIsUnavailableByDefault() throws Exception {
+        assertEquals(401, mvc.perform(get("/api-docs")).andReturn().getResponse().getStatus());
+        assertEquals(
+                404,
+                mvc.perform(get("/api-docs").with(user("reader", "claims:read")))
+                        .andReturn()
+                        .getResponse()
+                        .getStatus());
+        assertEquals(
+                401,
+                mvc.perform(get("/swagger-ui/index.html")).andReturn().getResponse().getStatus());
     }
 
     @Test

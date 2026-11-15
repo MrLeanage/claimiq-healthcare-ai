@@ -158,6 +158,68 @@ VALUES ('11111111-1111-1111-1111-111111111111', 'CLM-LEGACY', 'PAT-DEMO',
         assertEquals(new BigDecimal("150.00"), service.get(original.id()).amount());
     }
 
+    @Test
+    void assessmentInformationRoundTripsAndUpdatesWithoutLosingAuditOrLegacyData() {
+        var template = TestClaimData.dto(new BigDecimal("125.50"));
+        var context =
+                new com.claimiq.backend.claims.dto.ClaimContextDto(
+                        template.insurance(),
+                        java.util.List.of("Z00.00", "R69"),
+                        java.util.List.of(
+                                new com.claimiq.backend.claims.dto.ClaimContextDto.ServiceLine(
+                                        com.claimiq.backend.claims.domain.ClaimServiceLine
+                                                .CodeSystem.LOCAL,
+                                        "DEMO-1",
+                                        "Synthetic first service",
+                                        2,
+                                        new BigDecimal("50.00")),
+                                new com.claimiq.backend.claims.dto.ClaimContextDto.ServiceLine(
+                                        com.claimiq.backend.claims.domain.ClaimServiceLine
+                                                .CodeSystem.LOCAL,
+                                        "DEMO-2",
+                                        "Synthetic second service",
+                                        1,
+                                        new BigDecimal("25.50"))),
+                        template.clinicalSummary());
+        var input =
+                new ClaimRequest(
+                        "PAT-CONTEXT",
+                        "PROV-CONTEXT",
+                        new BigDecimal("125.50"),
+                        "USD",
+                        LocalDate.of(2026, 1, 1),
+                        context);
+        var created = service.create(input);
+        var read = service.get(created.id());
+        assertEquals("MEM-DEMO", read.context().insurance().memberReference());
+        assertEquals(java.util.List.of("Z00.00", "R69"), read.context().diagnosisCodes());
+        assertEquals(2, read.context().serviceLines().size());
+        assertEquals(new BigDecimal("50.00"), read.context().serviceLines().get(0).unitPrice());
+        assertEquals(new BigDecimal("25.50"), read.context().serviceLines().get(1).unitPrice());
+        assertEquals("Synthetic clinical context", read.context().clinicalSummary());
+        assertNull(claims.findById(LEGACY_ID).orElseThrow().getContext());
+        var updated =
+                service.update(
+                        created.id(),
+                        new ClaimRequest(
+                                "PAT-CONTEXT",
+                                "PROV-CONTEXT",
+                                new BigDecimal("125.50"),
+                                "USD",
+                                LocalDate.of(2026, 1, 1),
+                                TestClaimData.dto(new BigDecimal("125.50"))),
+                        created.version());
+        assertEquals(1, service.get(updated.id()).context().serviceLines().size());
+        assertEquals(
+                java.util.List.of("Z00.00"), service.get(updated.id()).context().diagnosisCodes());
+        assertEquals(
+                new BigDecimal("125.50"),
+                service.get(updated.id()).context().serviceLines().get(0).unitPrice());
+        assertTrue(updated.version() > created.version());
+        assertEquals(2, audit.findAllByClaimIdOrderByOccurredAtAsc(updated.id()).size());
+        service.submit(updated.id(), updated.version());
+    }
+
     private ClaimRequest request(String amount) {
         return new ClaimRequest(
                 "PAT-DEMO", "PROV-DEMO", new BigDecimal(amount), "USD", LocalDate.of(2026, 1, 1));

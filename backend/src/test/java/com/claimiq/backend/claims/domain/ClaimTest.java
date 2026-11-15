@@ -153,6 +153,7 @@ class ClaimTest {
         claim.setAmount(new BigDecimal("125.00"));
         claim.setCurrency("USD");
         claim.setServiceDate(LocalDate.of(2026, 1, 1));
+        claim.updateContext(com.claimiq.backend.claims.TestClaimData.domain(claim.getAmount()));
         return claim;
     }
 

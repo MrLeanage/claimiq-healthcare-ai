@@ -11,6 +11,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfiguration {
     @Bean
+    @org.springframework.context.annotation.Profile("!demo")
     JwtDecoder claimJwtDecoder(
             @Value("${claimiq.security.issuer-uri:}") String issuer,
             @Value("${claimiq.security.audience:}") String audience) {
@@ -30,16 +31,21 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    SecurityFilterChain claimSecurity(HttpSecurity http, JwtDecoder decoder) throws Exception {
+    SecurityFilterChain claimSecurity(HttpSecurity http, JwtDecoder decoder,
+            org.springframework.core.env.Environment environment) throws Exception {
         return http.csrf(csrf -> csrf.disable())
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
-                        requests ->
-                                requests.requestMatchers("/actuator/health")
-                                        .permitAll()
-                                        .anyRequest()
-                                        .authenticated())
+                        requests -> {
+                            requests.requestMatchers("/actuator/health").permitAll();
+                            if (environment.acceptsProfiles(
+                                    org.springframework.core.env.Profiles.of("local", "demo", "docs"))) {
+                                requests.requestMatchers("/api-docs", "/api-docs/**",
+                                        "/swagger-ui.html", "/swagger-ui/**").permitAll();
+                            }
+                            requests.anyRequest().authenticated();
+                        })
                 .oauth2ResourceServer(resource -> resource.jwt(jwt -> jwt.decoder(decoder)))
                 .build();
     }

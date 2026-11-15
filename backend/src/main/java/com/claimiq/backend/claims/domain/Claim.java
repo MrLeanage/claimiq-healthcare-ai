@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -50,6 +52,25 @@ public class Claim {
     @org.hibernate.annotations.Nationalized
     private String ownerSubject;
 
+    @Embedded private InsuranceDetails insurance;
+
+    @org.hibernate.annotations.Nationalized
+    @Column(name = "clinical_summary", length = 2000)
+    private String clinicalSummary;
+
+    @ElementCollection
+    @CollectionTable(name = "claim_diagnoses", joinColumns = @JoinColumn(name = "claim_id"))
+    @OrderColumn(name = "diagnosis_order")
+    @Column(name = "diagnosis_code", nullable = false, length = 20)
+    @org.hibernate.annotations.BatchSize(size = 50)
+    private List<String> diagnosisCodes = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "claim_service_lines", joinColumns = @JoinColumn(name = "claim_id"))
+    @OrderColumn(name = "line_number")
+    @org.hibernate.annotations.BatchSize(size = 50)
+    private List<ClaimServiceLine> serviceLines = new ArrayList<>();
+
     @Version private long version;
 
     public void assignOwner(String subject) {
@@ -79,23 +100,58 @@ public class Claim {
         return id;
     }
 
+    public ClaimContext getContext() {
+        if (insurance == null) return null;
+        return new ClaimContext(insurance, diagnosisCodes, serviceLines, clinicalSummary);
+    }
+
+    public void updateContext(ClaimContext context) {
+        requireDraft("Only draft claims can be edited");
+        if (context != null) context.requireMatchingAmount(amount);
+        applyContext(context);
+    }
+
+    private void applyContext(ClaimContext context) {
+        insurance = context == null ? null : context.insurance();
+        clinicalSummary = context == null ? null : context.clinicalSummary();
+        diagnosisCodes.clear();
+        serviceLines.clear();
+        if (context != null) {
+            diagnosisCodes.addAll(context.diagnosisCodes());
+            serviceLines.addAll(context.serviceLines());
+        }
+    }
+
     public void updateDetails(
             String patientReference,
             String providerReference,
             BigDecimal amount,
             String currency,
             LocalDate serviceDate) {
+        updateDetails(
+                patientReference, providerReference, amount, currency, serviceDate, getContext());
+    }
+
+    public void updateDetails(
+            String patientReference,
+            String providerReference,
+            BigDecimal amount,
+            String currency,
+            LocalDate serviceDate,
+            ClaimContext context) {
         requireDraft("Only draft claims can be edited");
         requireReference(patientReference, 100, "patientReference");
         requireReference(providerReference, 100, "providerReference");
         requireAmount(amount);
         requireCurrency(currency);
         requireServiceDate(serviceDate);
+        if (context != null) context.requireMatchingAmount(amount);
         this.patientReference = patientReference;
         this.providerReference = providerReference;
         this.amount = amount;
         this.currency = currency;
         this.serviceDate = serviceDate;
+        applyContext(context);
     }
 
     public String getClaimNumber() {
@@ -135,6 +191,7 @@ public class Claim {
     public void setAmount(BigDecimal x) {
         requireDraft("Only draft claims can be edited");
         requireAmount(x);
+        if (getContext() != null) getContext().requireMatchingAmount(x);
         amount = x;
     }
 
@@ -170,6 +227,11 @@ public class Claim {
         requireAmount(amount);
         requireCurrency(currency);
         requireServiceDate(serviceDate);
+        if (getContext() == null)
+            throw new IllegalArgumentException(
+                    "Complete insurance, diagnosis and billed service information before"
+                        + " submission");
+        getContext().requireMatchingAmount(amount);
         status = ClaimStatus.SUBMITTED;
         submittedAt = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
     }

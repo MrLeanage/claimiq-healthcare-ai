@@ -112,11 +112,11 @@ Historical rows have no owner. Only reviewers can read them; users cannot edit o
 submit them until an administrator explicitly reconciles ownership. Never assign
 historical claims to arbitrary new users automatically.
 
-**Existing local database:** a database initialized from an edited V1 has a
-different checksum from the published V1. Preserve its matching migration file
-until a deliberate reconciliation plan is approved. Do not run `flyway repair`,
-delete schema history, or overwrite that file merely to bypass validation. These
-fixes do not modify or repair the existing local ClaimIQ database.
+**Existing local databases:** if a database was initialized from an edited V1,
+its Flyway checksum differs from the published baseline. Preserve that matching
+migration locally until the database and migration history are deliberately
+reconciled. Do not commit an edited baseline or use checksum repair to hide a
+schema mismatch. New databases must use the published V1 and forward migrations.
 
 ## Verification
 
@@ -142,7 +142,7 @@ $env:CLAIMIQ_IT_PASSWORD = "<test-password>"
 
 Integrated authentication is also supported by the test URL and matching DLL.
 The integration test creates a uniquely named `ClaimIQ_it_<random>` database,
-applies original V1, inserts synthetic data, applies V2/V3, validates Hibernate,
+applies original V1, inserts synthetic data, applies V2-V5, validates Hibernate,
 and checks metadata, stale writes, concurrent transactions, and audit rollback.
 It drops only that generated database. Do not point the test administrator at a
 production server. CI runs the same profile with a disposable SQL Server service.
@@ -150,4 +150,56 @@ production server. CI runs the same profile with a disposable SQL Server service
 Tests use simulated JWT users; real identity-provider login remains a deployment
 configuration and acceptance-test step.
 
-See [architecture decisions](../docs/architecture/README.md) for OOP/SOLID boundaries.
+See [architecture](../docs/architecture/README.md) for dependency boundaries.
+
+## Swagger UI and the local demo
+
+Swagger uses springdoc-openapi 3.2.0 (Spring Boot 4.1 compatible). Documentation is
+disabled by default. For the existing local SQL Server setup, activate `local,docs`
+and open http://localhost:8080/swagger-ui/index.html. This still requires a real
+JWT issuer/audience and valid tokens for API calls. No database changes are made
+by enabling documentation.
+
+For the local demonstration, run from the repository root:
+
+```powershell
+.\backend\dev.ps1 demo
+```
+
+The default uses Windows authentication to persist data in SQL Server `ClaimIQ`,
+with `demo,demo-sqlserver` profiles. The UI is http://localhost:8081/swagger-ui/index.html.
+The matching JDBC authentication DLL folder is configured once through
+`scripts/Configure-SqlServer.ps1`; see [script instructions](scripts/README.md).
+Records survive application restarts. Demo JWTs remain valid for one hour; each
+restart generates a new signing key and new tokens, so reconnect the frontend.
+JWT ownership subjects remain stable across runs (`demo-writer`, `demo-reviewer`).
+
+Use `demo -Database Memory` for an explicitly disposable H2 demonstration.
+The server binds only to 127.0.0.1. Use synthetic data and never enable demo JWTs
+in a deployed production environment. Normal local/production JWT issuer settings
+remain separate.
+
+1. Open Swagger UI and click **Authorize**. Paste the writer token without `Bearer`.
+2. Create a claim using the example body. Copy the returned `id` and quoted `ETag`.
+3. Submit using that ID and `If-Match`, for example `"0"` (include the quotes).
+4. Authorize with the reviewer token, then change status to `UNDER_REVIEW`, using
+   the latest ETag. Use each new ETag for subsequent transitions to `APPROVED` or
+   `REJECTED`.
+
+The API enforces scope and ownership checks in demo mode too. Swagger documents required version headers and JWT authentication. The
+`sqlserver-it` profile verifies compatibility using disposable SQL Server databases.
+
+## Reusable commands
+
+See [backend command scripts](scripts/README.md) for build, tests, demo, local startup, and SQL Server integration commands. From inside backend, run `.\dev.ps1 help`.
+
+## Claim context for assessment
+
+See [API examples and field rules](../docs/api/README.md). Claim inputs now support
+insurance/authorization details, diagnosis codes, ordered billed services, and an
+optional synthetic clinical summary. The total must equal the sum of service
+charges. Drafts need a complete context before submission. Existing historical
+claims keep null context and remain readable. V5 adds nullable insurance/context
+columns and separate ordered service/diagnosis tables without rewriting old data.
+The domain owns these invariants; DTO validation and form checks provide earlier
+feedback. These inputs are not a verified eligibility response or an AI result.

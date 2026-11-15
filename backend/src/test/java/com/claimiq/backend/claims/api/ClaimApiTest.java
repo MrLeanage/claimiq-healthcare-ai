@@ -12,6 +12,9 @@ import com.claimiq.backend.claims.service.ClaimService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -22,8 +25,9 @@ import tools.jackson.databind.json.JsonMapper;
 import java.time.Instant;
 import java.util.UUID;
 
+@ExtendWith(MockitoExtension.class)
 class ClaimApiTest {
-    private final ClaimService service = mock(ClaimService.class);
+    @Mock private ClaimService service;
     private final JsonMapper json = JsonMapper.builder().build();
     private MockMvc mvc;
 
