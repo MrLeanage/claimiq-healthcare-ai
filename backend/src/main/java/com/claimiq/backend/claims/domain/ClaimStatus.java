@@ -1,4 +1,4 @@
-package com.claimiq.backend.claims;
+package com.claimiq.backend.claims.domain;
 
 public enum ClaimStatus {
     DRAFT,

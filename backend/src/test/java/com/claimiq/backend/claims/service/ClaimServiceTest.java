@@ -1,5 +1,13 @@
-package com.claimiq.backend.claims;
+package com.claimiq.backend.claims.service;
 
+import com.claimiq.backend.claims.domain.Claim;
+import com.claimiq.backend.claims.domain.ClaimStatus;
+import com.claimiq.backend.claims.dto.ClaimRequest;
+import com.claimiq.backend.claims.dto.ClaimResponse;
+import com.claimiq.backend.claims.exception.ClaimNotFoundException;
+import com.claimiq.backend.claims.exception.InvalidClaimTransitionException;
+import com.claimiq.backend.claims.mapper.ClaimMapper;
+import com.claimiq.backend.claims.repository.ClaimRepository;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.math.BigDecimal;

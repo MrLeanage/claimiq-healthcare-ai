@@ -1,4 +1,4 @@
-package com.claimiq.backend.claims;
+package com.claimiq.backend.claims.exception;
 
 public class InvalidClaimTransitionException extends RuntimeException {
     public InvalidClaimTransitionException(String message) {

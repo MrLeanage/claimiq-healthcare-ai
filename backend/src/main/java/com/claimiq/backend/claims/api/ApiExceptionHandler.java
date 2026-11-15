@@ -1,5 +1,7 @@
-package com.claimiq.backend.claims;
+package com.claimiq.backend.claims.api;
 
+import com.claimiq.backend.claims.exception.ClaimNotFoundException;
+import com.claimiq.backend.claims.exception.InvalidClaimTransitionException;
 import java.time.Instant;
 import java.util.Map;
 import org.springframework.http.*;

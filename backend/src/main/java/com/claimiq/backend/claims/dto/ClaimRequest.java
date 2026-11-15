@@ -1,4 +1,4 @@
-package com.claimiq.backend.claims;
+package com.claimiq.backend.claims.dto;
 
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;

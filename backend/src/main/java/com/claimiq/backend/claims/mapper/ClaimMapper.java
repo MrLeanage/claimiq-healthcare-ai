@@ -1,5 +1,8 @@
-package com.claimiq.backend.claims;
+package com.claimiq.backend.claims.mapper;
 
+import com.claimiq.backend.claims.domain.Claim;
+import com.claimiq.backend.claims.dto.ClaimRequest;
+import com.claimiq.backend.claims.dto.ClaimResponse;
 import org.springframework.stereotype.Component;
 
 @Component

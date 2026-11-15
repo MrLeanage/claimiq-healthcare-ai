@@ -1,5 +1,9 @@
-package com.claimiq.backend.claims;
+package com.claimiq.backend.claims.api;
 
+import com.claimiq.backend.claims.dto.ClaimRequest;
+import com.claimiq.backend.claims.dto.ClaimResponse;
+import com.claimiq.backend.claims.dto.StatusRequest;
+import com.claimiq.backend.claims.service.ClaimService;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.UUID;
@@ -51,6 +55,4 @@ public class ClaimController {
             @PathVariable UUID id, @Valid @RequestBody StatusRequest request) {
         return service.transition(id, request.status());
     }
-
-    public record StatusRequest(@jakarta.validation.constraints.NotNull ClaimStatus status) {}
 }

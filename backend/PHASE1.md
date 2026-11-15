@@ -1,5 +1,24 @@
 # ClaimIQ — Claim Management backend
 
+## Package structure
+
+The claims feature stays together under `com.claimiq.backend.claims`:
+
+```text
+claims/
+├── api/         REST controller and HTTP exception handler
+├── service/     Claim lifecycle and transaction boundaries
+├── domain/      JPA entity and claim status
+├── repository/  Spring Data JPA repository
+├── dto/         Request and response records
+├── mapper/      Entity/DTO mapping
+└── exception/   Claim-specific exceptions
+```
+
+Tests mirror the production package structure. `BackendApplication` remains in
+`com.claimiq`, above every claims package, so Spring component, entity, and
+repository scanning includes the entire feature without custom scan settings.
+
 ## API
 
 Base path: `/api/v1/claims`.

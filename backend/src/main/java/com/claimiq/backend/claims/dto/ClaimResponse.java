@@ -1,5 +1,6 @@
-package com.claimiq.backend.claims;
+package com.claimiq.backend.claims.dto;
 
+import com.claimiq.backend.claims.domain.ClaimStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
