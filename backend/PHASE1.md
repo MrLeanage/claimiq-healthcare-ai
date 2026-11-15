@@ -7,8 +7,8 @@ The claims feature stays together under `com.claimiq.backend.claims`:
 ```text
 claims/
 ├── api/         REST controller and HTTP exception handler
-├── service/     Claim lifecycle and transaction boundaries
-├── domain/      JPA entity and claim status
+├── service/     Use-case orchestration and transaction boundaries
+├── domain/      JPA entity, claim status, and lifecycle rules
 ├── repository/  Spring Data JPA repository
 ├── dto/         Request and response records
 ├── mapper/      Entity/DTO mapping
@@ -18,6 +18,12 @@ claims/
 Tests mirror the production package structure. `BackendApplication` remains in
 `com.claimiq`, above every claims package, so Spring component, entity, and
 repository scanning includes the entire feature without custom scan settings.
+
+`Claim` protects its lifecycle: `submit()` records the submission timestamp and
+`transitionTo()` permits only the documented review decisions. There are no public
+status or submission-time setters. Detail setters reject edits after submission,
+including calls made outside the service. The service coordinates loading,
+mapping, and persistence; the domain owns the transition rules.
 
 ## API
 

@@ -1,5 +1,6 @@
 package com.claimiq.backend.claims.domain;
 
+import com.claimiq.backend.claims.exception.InvalidClaimTransitionException;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -64,6 +65,7 @@ public class Claim {
     }
 
     public void setClaimNumber(String x) {
+        requireDraft("Only draft claims can be edited");
         claimNumber = x;
     }
 
@@ -72,6 +74,7 @@ public class Claim {
     }
 
     public void setPatientReference(String x) {
+        requireDraft("Only draft claims can be edited");
         patientReference = x;
     }
 
@@ -80,6 +83,7 @@ public class Claim {
     }
 
     public void setProviderReference(String x) {
+        requireDraft("Only draft claims can be edited");
         providerReference = x;
     }
 
@@ -88,6 +92,7 @@ public class Claim {
     }
 
     public void setAmount(BigDecimal x) {
+        requireDraft("Only draft claims can be edited");
         amount = x;
     }
 
@@ -96,6 +101,7 @@ public class Claim {
     }
 
     public void setCurrency(String x) {
+        requireDraft("Only draft claims can be edited");
         currency = x;
     }
 
@@ -104,6 +110,7 @@ public class Claim {
     }
 
     public void setServiceDate(LocalDate x) {
+        requireDraft("Only draft claims can be edited");
         serviceDate = x;
     }
 
@@ -111,8 +118,23 @@ public class Claim {
         return status;
     }
 
-    public void setStatus(ClaimStatus x) {
-        status = x;
+    public void submit() {
+        requireDraft("Only draft claims can be submitted");
+        status = ClaimStatus.SUBMITTED;
+        submittedAt = Instant.now();
+    }
+
+    public void transitionTo(ClaimStatus target) {
+        boolean valid =
+                (status == ClaimStatus.SUBMITTED && target == ClaimStatus.UNDER_REVIEW)
+                        || (status == ClaimStatus.UNDER_REVIEW
+                                && (target == ClaimStatus.APPROVED
+                                        || target == ClaimStatus.REJECTED));
+        if (!valid) {
+            throw new InvalidClaimTransitionException(
+                    "Invalid transition from " + status + " to " + target);
+        }
+        status = target;
     }
 
     public Instant getCreatedAt() {
@@ -127,11 +149,13 @@ public class Claim {
         return submittedAt;
     }
 
-    public void setSubmittedAt(Instant x) {
-        submittedAt = x;
-    }
-
     public long getVersion() {
         return version;
+    }
+
+    private void requireDraft(String message) {
+        if (status != ClaimStatus.DRAFT) {
+            throw new InvalidClaimTransitionException(message);
+        }
     }
 }

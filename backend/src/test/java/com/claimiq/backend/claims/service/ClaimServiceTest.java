@@ -72,8 +72,37 @@ class ClaimServiceTest {
     void preventsEditingSubmittedClaim() {
         UUID id = UUID.randomUUID();
         Claim claim = new Claim();
-        claim.setStatus(ClaimStatus.SUBMITTED);
+        claim.submit();
         when(repository.findById(id)).thenReturn(Optional.of(claim));
         assertThrows(InvalidClaimTransitionException.class, () -> service.update(id, request));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void transitionsSubmittedClaimToReview() {
+        UUID id = UUID.randomUUID();
+        Claim claim = new Claim();
+        claim.submit();
+        when(repository.findById(id)).thenReturn(Optional.of(claim));
+
+        ClaimResponse response = service.transition(id, ClaimStatus.UNDER_REVIEW);
+
+        assertEquals(ClaimStatus.UNDER_REVIEW, response.status());
+        assertEquals(claim.getSubmittedAt(), response.submittedAt());
+        verify(repository).save(claim);
+    }
+
+    @Test
+    void repeatedSubmissionDoesNotSaveOrChangeSubmissionTime() {
+        UUID id = UUID.randomUUID();
+        Claim claim = new Claim();
+        claim.submit();
+        var submittedAt = claim.getSubmittedAt();
+        when(repository.findById(id)).thenReturn(Optional.of(claim));
+
+        assertThrows(InvalidClaimTransitionException.class, () -> service.submit(id));
+
+        assertEquals(submittedAt, claim.getSubmittedAt());
+        verify(repository, never()).save(any());
     }
 }

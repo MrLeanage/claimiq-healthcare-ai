@@ -5,10 +5,8 @@ import com.claimiq.backend.claims.domain.ClaimStatus;
 import com.claimiq.backend.claims.dto.ClaimRequest;
 import com.claimiq.backend.claims.dto.ClaimResponse;
 import com.claimiq.backend.claims.exception.ClaimNotFoundException;
-import com.claimiq.backend.claims.exception.InvalidClaimTransitionException;
 import com.claimiq.backend.claims.mapper.ClaimMapper;
 import com.claimiq.backend.claims.repository.ClaimRepository;
-import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -50,37 +48,23 @@ public class ClaimService {
 
     public ClaimResponse update(UUID id, ClaimRequest request) {
         Claim claim = find(id);
-        require(claim.getStatus() == ClaimStatus.DRAFT, "Only draft claims can be edited");
         mapper.apply(request, claim);
         return mapper.toResponse(repository.save(claim));
     }
 
     public ClaimResponse submit(UUID id) {
         Claim claim = find(id);
-        require(claim.getStatus() == ClaimStatus.DRAFT, "Only draft claims can be submitted");
-        claim.setStatus(ClaimStatus.SUBMITTED);
-        claim.setSubmittedAt(Instant.now());
+        claim.submit();
         return mapper.toResponse(repository.save(claim));
     }
 
     public ClaimResponse transition(UUID id, ClaimStatus target) {
         Claim claim = find(id);
-        ClaimStatus current = claim.getStatus();
-        boolean valid =
-                (current == ClaimStatus.SUBMITTED && target == ClaimStatus.UNDER_REVIEW)
-                        || (current == ClaimStatus.UNDER_REVIEW
-                                && (target == ClaimStatus.APPROVED
-                                        || target == ClaimStatus.REJECTED));
-        require(valid, "Invalid transition from " + current + " to " + target);
-        claim.setStatus(target);
+        claim.transitionTo(target);
         return mapper.toResponse(repository.save(claim));
     }
 
     private Claim find(UUID id) {
         return repository.findById(id).orElseThrow(() -> new ClaimNotFoundException(id));
-    }
-
-    private void require(boolean ok, String message) {
-        if (!ok) throw new InvalidClaimTransitionException(message);
     }
 }
