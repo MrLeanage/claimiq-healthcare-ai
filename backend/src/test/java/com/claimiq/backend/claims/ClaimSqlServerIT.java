@@ -296,17 +296,22 @@ VALUES ('11111111-1111-1111-1111-111111111111', 'CLM-LEGACY', 'PAT-DEMO',
     }
 
     @AfterAll
-    static void dropDisposableDatabase() throws Exception {
+    static void dropDisposableDatabase(@Autowired javax.sql.DataSource dataSource) throws Exception {
         if (created) {
             if (!DATABASE.matches("ClaimIQ_it_[0-9a-f]{32}"))
                 throw new IllegalStateException("Unsafe cleanup target");
+            // Stop pool reconnects before claiming the database's single-user slot.
+            if (dataSource instanceof com.zaxxer.hikari.HikariDataSource pool) {
+                pool.close();
+            }
             try (var connection = DriverManager.getConnection(adminUrl, username, password);
                     var statement = connection.createStatement()) {
                 statement.execute(
                         "ALTER DATABASE ["
                                 + DATABASE
-                                + "] SET SINGLE_USER WITH ROLLBACK IMMEDIATE");
-                statement.execute("DROP DATABASE [" + DATABASE + "]");
+                                + "] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE ["
+                                + DATABASE
+                                + "]");
             }
         }
     }
