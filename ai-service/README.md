@@ -2,6 +2,11 @@
 
 Python 3.12+, standard library only. From the repository root:
 
+Use `.\dev.cmd start` to launch all native services together. It checks readiness
+and prints the backend's demo tokens; `stop`, `restart`, `status` and `logs` manage
+the stack. Use `-Service ai` for Python alone. The commands below remain available
+for standalone development.
+
 ```powershell
 .\ai-service\dev.ps1 test
 .\ai-service\dev.ps1 serve
