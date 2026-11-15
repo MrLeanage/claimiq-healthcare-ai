@@ -1,4 +1,4 @@
-"""Loopback-only development API. Put an authenticated service boundary in front for deployment."""
+"""Development API; loopback by default, service key required for container binding."""
 
 import argparse
 import json
@@ -65,10 +65,15 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8090)
     args = parser.parse_args()
     print(
-        f"ClaimIQ synthetic assessment service: http://127.0.0.1:{args.port}",
+        f"ClaimIQ synthetic assessment service: http://{args.host}:{args.port}",
         flush=True,
     )
-    ThreadingHTTPServer(("127.0.0.1", args.port), Handler).serve_forever()
+    if args.host not in ("127.0.0.1", "localhost") and not os.environ.get(
+        "CLAIMIQ_AI_API_KEY"
+    ):
+        parser.error("CLAIMIQ_AI_API_KEY is required when listening beyond loopback")
+    ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()

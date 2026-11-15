@@ -16,6 +16,10 @@ The backend default AI URL is `http://127.0.0.1:8090`; override with
 service key, set `CLAIMIQ_AI_API_KEY` in both processes. This is a loopback development
 server; deployment requires a production server, TLS and service authentication.
 
+For container startup use [Docker Compose](../infrastructure/docker/README.md).
+The server accepts `--host` for container networking; binding beyond loopback
+requires `CLAIMIQ_AI_API_KEY`. The Compose network does not publish the model port.
+
 If PowerShell blocks scripts, run `python -m app.server --port 8090` from
 `ai-service`. Check `http://127.0.0.1:8090/health`; `/` has no homepage.
 Restarting Spring Boot does not retrain or restart Python. Restarting Python

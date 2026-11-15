@@ -19,5 +19,6 @@ For 412, reload the claim and assess the latest version. Do not resolve Flyway
 checksum errors by blindly repairing history; preserve local configuration and
 reconcile the schema deliberately. Assessment history is not persisted.
 
-Build/test helpers do not deploy infrastructure. Container orchestration, cloud
-deployment and production monitoring remain planned work.
+See [Docker operations](../../infrastructure/docker/README.md) for an isolated
+demonstration of all services. Native scripts remain available. Cloud deployment
+and production monitoring remain planned work.
