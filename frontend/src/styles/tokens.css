@@ -1,0 +1,16 @@
+/* ClaimIQ palette inspired by Legacy Health LLC's public website.
+   This is an independent application, not an internal-product reproduction. */
+:root {
+  --color-primary: #39476a;
+  --color-primary-hover: #293652;
+  --color-accent: #47a8f3;
+  --color-accent-ink: #1766a1;
+  --color-text: #263651;
+  --color-muted: #62728a;
+  --color-border: #dfe6ef;
+  --color-canvas: #f3f6fa;
+  --color-surface: #ffffff;
+  --color-soft: #edf5fd;
+  --font-body: 'Roboto', Arial, sans-serif;
+  --font-heading: 'Open Sans', Arial, sans-serif;
+}

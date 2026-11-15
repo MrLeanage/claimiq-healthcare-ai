@@ -52,3 +52,16 @@ synthetic outcomes and learns weights; inference loads a versioned JSON artifact
 Contributions are exact on the log-odds scale. Corrective actions come from a
 curated catalogue. These are advisory findings, not payer verification.
 Assessment persistence and external outcome validation are not implemented.
+
+## Web workspace
+
+React routes separate the claims list, saved claim details, workflow guide and
+session screen. Draft creation and editing use a dialog with section tabs.
+`ClaimsGateway` defines the browser boundary and `HttpClaimsGateway` attaches the
+bearer token and version headers. Token claims are UI hints, not authorization.
+
+The development proxy keeps browser requests on one origin. Production hosting
+needs both an SPA fallback and an API reverse proxy. Tokens stay in memory and
+session changes unmount the workspace. Request cancellation prevents obsolete
+list/session results overwriting new state. The assessment panel hides results
+from different claim versions and shows explicit failure instead of a default score.
