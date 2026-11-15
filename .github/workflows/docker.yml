@@ -1,0 +1,35 @@
+name: Docker Compose verification
+on:
+  push:
+    branches: [main, feature/docker-compose]
+    paths: ['docker-compose.yml', '.dockerignore', 'infrastructure/docker/**', 'backend/**', 'frontend/**', 'ai-service/**', '.github/workflows/docker.yml']
+  pull_request:
+    paths: ['docker-compose.yml', '.dockerignore', 'infrastructure/docker/**', 'backend/**', 'frontend/**', 'ai-service/**', '.github/workflows/docker.yml']
+permissions:
+  contents: read
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s infrastructure/docker -p 'test_*.py' -v
+      - run: python infrastructure/docker/demo.py init --port 5175
+      - run: docker compose config --quiet
+      - run: docker compose up --build --detach --wait --wait-timeout 240
+      - run: python infrastructure/docker/smoke.py
+      - name: Verify database persistence across backend restart
+        run: |
+          docker compose restart backend
+          python infrastructure/docker/smoke.py --check-persistence
+      - name: Service status and logs
+        if: always()
+        run: |
+          docker compose ps --all
+          docker compose logs --no-color --tail 100
+      - name: Remove disposable CI containers and volume
+        if: always()
+        run: docker compose down --volumes --remove-orphans

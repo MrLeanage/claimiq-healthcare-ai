@@ -40,5 +40,13 @@ to manage Spring Boot and Vite. Start Python separately as described above.
 - [Security boundaries](docs/security/README.md)
 - [Operations](docs/operations/README.md)
 
-Docker Compose, Azure/Kubernetes deployment, a Jupyter evaluation notebook and
-persisted assessment history are planned; they are not part of this version.
+## Run all services with Docker
+
+See [Docker setup](infrastructure/docker/README.md). Generate unique local demo
+credentials, then run `docker compose up -d --build --wait` from this folder.
+This starts the web interface, backend and model with an isolated persistent
+SQL Server database. Open http://localhost:5173. Native scripts remain available
+for development; Docker does not use the existing Windows database.
+
+Azure/Kubernetes deployment, a Jupyter evaluation notebook and persisted
+assessment history remain planned work.

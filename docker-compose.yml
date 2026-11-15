@@ -1,0 +1,90 @@
+name: claimiq
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${CLAIMIQ_SQL_PASSWORD:?Run python infrastructure/docker/demo.py init first}
+    volumes:
+      - sql-data:/var/opt/mssql
+    healthcheck:
+      test: ['CMD-SHELL', '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -Q "SELECT 1" > /dev/null']
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  database-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      SQLCMDPASSWORD: ${CLAIMIQ_SQL_PASSWORD:?Run the demo init command first}
+    entrypoint: ['/opt/mssql-tools18/bin/sqlcmd']
+    command: ['-S', 'sqlserver', '-U', 'sa', '-C', '-b', '-Q', "IF DB_ID(N'ClaimIQ') IS NULL CREATE DATABASE [ClaimIQ]"]
+    restart: 'no'
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/ai-service.Dockerfile
+    environment:
+      CLAIMIQ_AI_API_KEY: ${CLAIMIQ_AI_API_KEY:?Run the demo init command first}
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/backend.Dockerfile
+    depends_on:
+      database-init:
+        condition: service_completed_successfully
+      ai-service:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
+      SERVER_ADDRESS: 0.0.0.0
+      SERVER_PORT: '8080'
+      SPRING_DATASOURCE_URL: jdbc:sqlserver://sqlserver:1433;databaseName=ClaimIQ;encrypt=true;trustServerCertificate=true
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: ${CLAIMIQ_SQL_PASSWORD:?Run the demo init command first}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_FLYWAY_ENABLED: 'true'
+      CLAIMIQ_DEMO_JWT_SECRET: ${CLAIMIQ_DEMO_JWT_SECRET:?Run the demo init command first}
+      CLAIMIQ_AI_BASE_URL: http://ai-service:8090
+      CLAIMIQ_AI_API_KEY: ${CLAIMIQ_AI_API_KEY:?Run the demo init command first}
+    healthcheck:
+      test: ['CMD', 'curl', '--fail', '--silent', 'http://127.0.0.1:8080/actuator/health']
+      interval: 10s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/frontend.Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:${CLAIMIQ_WEB_PORT:-5173}:8080'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8080/healthz']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  sql-data:
