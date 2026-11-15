@@ -5,8 +5,10 @@ import static org.mockito.Mockito.*;
 
 import com.claimiq.backend.claims.dto.ClaimResponse;
 import com.claimiq.backend.claims.service.ClaimService;
-import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
 
 class ClaimControllerTest {
     @Test
@@ -30,7 +32,7 @@ class ClaimControllerTest {
                         0);
         when(service.get(id)).thenReturn(response);
 
-        assertSame(response, controller.get(id));
+        assertSame(response, controller.get(id).getBody());
 
         verify(service).get(id);
         verifyNoMoreInteractions(service);

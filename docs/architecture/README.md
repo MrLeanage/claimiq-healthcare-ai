@@ -61,6 +61,22 @@ class hierarchy for a five-state workflow.
   collaborators, immutable DTOs, and the absence of raw lifecycle setters.
 
 These checks provide evidence for the current design; they are not a formal
-guarantee that every future change satisfies SOLID. Runtime SQL Server mapping,
-migrations, concurrency, authorization, and end-to-end behavior require their own
-integration and security verification.
+guarantee that every future change satisfies SOLID. SQL Server mapping, forward migrations, and concurrent persistence now have an
+explicit integration gate. Real identity-provider login, production permissions,
+and deployment behavior still require acceptance and security verification.
+
+
+## Persistence and security hardening
+
+- Mutations require a client's expected entity version (`If-Match`); database
+  optimistic locking still protects transactions that overlap after that check.
+- Writes flush before response mapping and append an audit row in the same
+  transaction. Audit failure rolls back the business change.
+- `ClaimAccessPolicy` keeps JWT/framework details outside the domain and service
+  contract. Its security adapter enforces scopes and owner visibility.
+- Domain value checks apply to direct Java callers, not just HTTP DTO validation.
+- Forward migrations preserve the published V1 checksum. SQL Server integration
+  tests exercise the actual dialect and schema, not an H2 approximation.
+- The default full test suite is database-independent; `sqlserver-it` and CI add
+  the database gate. Passing mock/security tests does not configure a real login
+  provider or certify production regulatory compliance.

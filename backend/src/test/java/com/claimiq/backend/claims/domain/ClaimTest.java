@@ -3,25 +3,27 @@ package com.claimiq.backend.claims.domain;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.claimiq.backend.claims.exception.InvalidClaimTransitionException;
+
+import org.junit.jupiter.api.Test;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Consumer;
-import org.junit.jupiter.api.Test;
 
 class ClaimTest {
     @Test
     void newClaimIsDraftWithoutSubmissionTime() {
-        Claim claim = new Claim();
+        Claim claim = validClaim();
         assertEquals(ClaimStatus.DRAFT, claim.getStatus());
         assertNull(claim.getSubmittedAt());
     }
 
     @Test
     void submissionChangesStateAndRecordsTimeTogether() {
-        Claim claim = new Claim();
-        Instant before = Instant.now();
+        Claim claim = validClaim();
+        Instant before = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         claim.submit();
         Instant after = Instant.now();
 
@@ -87,18 +89,18 @@ class ClaimTest {
             }
             assertEquals(status, claim.getStatus());
             assertEquals(submittedAt, claim.getSubmittedAt());
-            assertNull(claim.getClaimNumber());
-            assertNull(claim.getPatientReference());
-            assertNull(claim.getProviderReference());
-            assertNull(claim.getAmount());
-            assertNull(claim.getCurrency());
-            assertNull(claim.getServiceDate());
+            assertEquals("CLM-TEST", claim.getClaimNumber());
+            assertEquals("PAT-DEMO", claim.getPatientReference());
+            assertEquals("PROV-DEMO", claim.getProviderReference());
+            assertEquals(new BigDecimal("125.00"), claim.getAmount());
+            assertEquals("USD", claim.getCurrency());
+            assertEquals(LocalDate.of(2026, 1, 1), claim.getServiceDate());
         }
     }
 
     @Test
     void draftDetailsRemainEditable() {
-        Claim claim = new Claim();
+        Claim claim = validClaim();
         claim.setClaimNumber("CLM-DEMO");
         claim.setPatientReference("PAT-DEMO");
         claim.setProviderReference("PROV-DEMO");
@@ -126,8 +128,67 @@ class ClaimTest {
         }
     }
 
-    private Claim claimAt(ClaimStatus status) {
+    @Test
+    void invalidDetailUpdateIsAtomic() {
+        Claim claim = validClaim();
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        claim.updateDetails(
+                                "PAT-CHANGED",
+                                "PROV-CHANGED",
+                                BigDecimal.ZERO,
+                                "USD",
+                                LocalDate.of(2026, 1, 1)));
+        assertEquals("PAT-DEMO", claim.getPatientReference());
+        assertEquals("PROV-DEMO", claim.getProviderReference());
+        assertEquals(new BigDecimal("125.00"), claim.getAmount());
+    }
+
+    private Claim validClaim() {
         Claim claim = new Claim();
+        claim.setClaimNumber("CLM-TEST");
+        claim.setPatientReference("PAT-DEMO");
+        claim.setProviderReference("PROV-DEMO");
+        claim.setAmount(new BigDecimal("125.00"));
+        claim.setCurrency("USD");
+        claim.setServiceDate(LocalDate.of(2026, 1, 1));
+        return claim;
+    }
+
+    @Test
+    void incompleteClaimCannotBeSubmitted() {
+        Claim claim = new Claim();
+        assertThrows(IllegalArgumentException.class, claim::submit);
+        assertEquals(ClaimStatus.DRAFT, claim.getStatus());
+        assertNull(claim.getSubmittedAt());
+    }
+
+    @Test
+    void invalidValuesAreRejectedBeforeMutation() {
+        Claim claim = validClaim();
+        for (BigDecimal invalid :
+                new BigDecimal[] {
+                    null,
+                    BigDecimal.ZERO,
+                    new BigDecimal("-1"),
+                    new BigDecimal("0.001"),
+                    new BigDecimal("10000000000000000")
+                }) {
+            assertThrows(IllegalArgumentException.class, () -> claim.setAmount(invalid));
+        }
+        assertThrows(IllegalArgumentException.class, () -> claim.setPatientReference(" "));
+        assertThrows(IllegalArgumentException.class, () -> claim.setCurrency("usd"));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> claim.setServiceDate(LocalDate.now().plusDays(1)));
+        assertEquals(new BigDecimal("125.00"), claim.getAmount());
+        assertEquals("PAT-DEMO", claim.getPatientReference());
+        assertEquals("USD", claim.getCurrency());
+    }
+
+    private Claim claimAt(ClaimStatus status) {
+        Claim claim = validClaim();
         if (status == ClaimStatus.DRAFT) return claim;
         claim.submit();
         if (status == ClaimStatus.SUBMITTED) return claim;

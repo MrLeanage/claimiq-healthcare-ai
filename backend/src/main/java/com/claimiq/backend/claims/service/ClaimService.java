@@ -3,9 +3,11 @@ package com.claimiq.backend.claims.service;
 import com.claimiq.backend.claims.domain.ClaimStatus;
 import com.claimiq.backend.claims.dto.ClaimRequest;
 import com.claimiq.backend.claims.dto.ClaimResponse;
-import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.util.UUID;
 
 /** Public use cases for managing claims. */
 public interface ClaimService {
@@ -15,9 +17,9 @@ public interface ClaimService {
 
     Page<ClaimResponse> list(Pageable pageable);
 
-    ClaimResponse update(UUID id, ClaimRequest request);
+    ClaimResponse update(UUID id, ClaimRequest request, long expectedVersion);
 
-    ClaimResponse submit(UUID id);
+    ClaimResponse submit(UUID id, long expectedVersion);
 
-    ClaimResponse transition(UUID id, ClaimStatus target);
+    ClaimResponse transition(UUID id, ClaimStatus target, long expectedVersion);
 }

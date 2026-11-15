@@ -9,15 +9,18 @@ import com.claimiq.backend.claims.dto.ClaimResponse;
 import com.claimiq.backend.claims.exception.ClaimNotFoundException;
 import com.claimiq.backend.claims.exception.InvalidClaimTransitionException;
 import com.claimiq.backend.claims.service.ClaimService;
-import java.time.Instant;
-import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
 import tools.jackson.databind.json.JsonMapper;
+
+import java.time.Instant;
+import java.util.UUID;
 
 class ClaimApiTest {
     private final ClaimService service = mock(ClaimService.class);
@@ -46,13 +49,14 @@ class ClaimApiTest {
     @Test
     void invalidTransitionRemainsAConflict() throws Exception {
         UUID id = UUID.randomUUID();
-        when(service.transition(id, ClaimStatus.APPROVED))
+        when(service.transition(id, ClaimStatus.APPROVED, 0))
                 .thenThrow(new InvalidClaimTransitionException("Invalid transition"));
         assertError(
                 mvc.perform(
                                 patch("/api/v1/claims/{id}/status", id)
                                         .contentType(MediaType.APPLICATION_JSON)
-                                        .content("{\"status\":\"APPROVED\"}"))
+                                        .content("{\"status\":\"APPROVED\"}")
+                                        .header("If-Match", "\"0\""))
                         .andReturn(),
                 409,
                 "INVALID_CLAIM_TRANSITION",
@@ -121,15 +125,30 @@ class ClaimApiTest {
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .content(
                                                 """
-                {"patientReference":"PAT-DEMO","providerReference":"PROV-DEMO",
-                 "amount":125.50,"currency":"USD","serviceDate":"2026-01-01"}
-                """))
+{"patientReference":"PAT-DEMO","providerReference":"PROV-DEMO",
+ "amount":125.50,"currency":"USD","serviceDate":"2026-01-01"}
+"""))
                         .andReturn();
         assertEquals(201, result.getResponse().getStatus());
         assertEquals("/api/v1/claims/" + id, result.getResponse().getHeader("Location"));
         assertEquals(
                 id.toString(),
                 json.readTree(result.getResponse().getContentAsString()).get("id").asText());
+    }
+
+    @Test
+    void optimisticLockFailuresUseAPreconditionResponse() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(service.submit(id, 0))
+                .thenThrow(
+                        new org.springframework.orm.ObjectOptimisticLockingFailureException(
+                                "Claim", id));
+        assertError(
+                mvc.perform(post("/api/v1/claims/{id}/submit", id).header("If-Match", "\"0\""))
+                        .andReturn(),
+                412,
+                "STALE_CLAIM_VERSION",
+                "Claim has changed; reload it before retrying");
     }
 
     private void assertError(MvcResult result, int status, String code, String message)

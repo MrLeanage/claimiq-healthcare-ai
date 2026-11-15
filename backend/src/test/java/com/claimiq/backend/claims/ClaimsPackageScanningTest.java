@@ -9,13 +9,15 @@ import com.claimiq.backend.claims.api.ClaimController;
 import com.claimiq.backend.claims.domain.Claim;
 import com.claimiq.backend.claims.mapper.ClaimMapper;
 import com.claimiq.backend.claims.repository.ClaimRepository;
-import com.claimiq.backend.claims.service.ClaimService;
 import com.claimiq.backend.claims.service.ClaimNumberGenerator;
+import com.claimiq.backend.claims.service.ClaimService;
 import com.claimiq.backend.claims.service.impl.DefaultClaimService;
+
 import jakarta.persistence.Entity;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
-import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.AssignableTypeFilter;
@@ -23,15 +25,21 @@ import org.springframework.core.type.filter.AssignableTypeFilter;
 class ClaimsPackageScanningTest {
     @Test
     void applicationDiscoversClaimComponentsAndWiresTheirDependencies() {
-        new ApplicationContextRunner()
+        new WebApplicationContextRunner()
                 .withUserConfiguration(BackendApplication.class)
                 .withBean(ClaimRepository.class, () -> mock(ClaimRepository.class))
+                .withBean(
+                        com.claimiq.backend.claims.repository.ClaimAuditRepository.class,
+                        () ->
+                                mock(
+                                        com.claimiq.backend.claims.repository.ClaimAuditRepository
+                                                .class))
                 .withPropertyValues(
                         "spring.autoconfigure.exclude="
-                                + "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration,"
-                                + "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration,"
-                                + "org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration,"
-                                + "org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration")
+                            + "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration,"
+                            + "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration,"
+                            + "org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration,"
+                            + "org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration")
                 .run(
                         context -> {
                             assertNull(context.getStartupFailure());

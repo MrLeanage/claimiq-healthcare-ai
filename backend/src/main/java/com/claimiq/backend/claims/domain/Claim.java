@@ -1,7 +1,9 @@
 package com.claimiq.backend.claims.domain;
 
 import com.claimiq.backend.claims.exception.InvalidClaimTransitionException;
+
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -43,21 +45,56 @@ public class Claim {
     private Instant updatedAt;
 
     private Instant submittedAt;
+
+    @Column(length = 255, updatable = false)
+    private String ownerSubject;
+
     @Version private long version;
+
+    public void assignOwner(String subject) {
+        requireDraft("Only draft claims can be edited");
+        if (ownerSubject != null)
+            throw new IllegalStateException("Claim ownership cannot be reassigned");
+        requireReference(subject, 255, "ownerSubject");
+        ownerSubject = subject;
+    }
+
+    public String getOwnerSubject() {
+        return ownerSubject;
+    }
 
     @PrePersist
     void created() {
-        createdAt = Instant.now();
+        createdAt = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         updatedAt = createdAt;
     }
 
     @PreUpdate
     void updated() {
-        updatedAt = Instant.now();
+        updatedAt = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
     }
 
     public UUID getId() {
         return id;
+    }
+
+    public void updateDetails(
+            String patientReference,
+            String providerReference,
+            BigDecimal amount,
+            String currency,
+            LocalDate serviceDate) {
+        requireDraft("Only draft claims can be edited");
+        requireReference(patientReference, 100, "patientReference");
+        requireReference(providerReference, 100, "providerReference");
+        requireAmount(amount);
+        requireCurrency(currency);
+        requireServiceDate(serviceDate);
+        this.patientReference = patientReference;
+        this.providerReference = providerReference;
+        this.amount = amount;
+        this.currency = currency;
+        this.serviceDate = serviceDate;
     }
 
     public String getClaimNumber() {
@@ -66,6 +103,7 @@ public class Claim {
 
     public void setClaimNumber(String x) {
         requireDraft("Only draft claims can be edited");
+        requireReference(x, 40, "claimNumber");
         claimNumber = x;
     }
 
@@ -75,6 +113,7 @@ public class Claim {
 
     public void setPatientReference(String x) {
         requireDraft("Only draft claims can be edited");
+        requireReference(x, 100, "patientReference");
         patientReference = x;
     }
 
@@ -84,6 +123,7 @@ public class Claim {
 
     public void setProviderReference(String x) {
         requireDraft("Only draft claims can be edited");
+        requireReference(x, 100, "providerReference");
         providerReference = x;
     }
 
@@ -93,6 +133,7 @@ public class Claim {
 
     public void setAmount(BigDecimal x) {
         requireDraft("Only draft claims can be edited");
+        requireAmount(x);
         amount = x;
     }
 
@@ -102,6 +143,7 @@ public class Claim {
 
     public void setCurrency(String x) {
         requireDraft("Only draft claims can be edited");
+        requireCurrency(x);
         currency = x;
     }
 
@@ -111,6 +153,7 @@ public class Claim {
 
     public void setServiceDate(LocalDate x) {
         requireDraft("Only draft claims can be edited");
+        requireServiceDate(x);
         serviceDate = x;
     }
 
@@ -120,8 +163,14 @@ public class Claim {
 
     public void submit() {
         requireDraft("Only draft claims can be submitted");
+        requireReference(claimNumber, 40, "claimNumber");
+        requireReference(patientReference, 100, "patientReference");
+        requireReference(providerReference, 100, "providerReference");
+        requireAmount(amount);
+        requireCurrency(currency);
+        requireServiceDate(serviceDate);
         status = ClaimStatus.SUBMITTED;
-        submittedAt = Instant.now();
+        submittedAt = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
     }
 
     public void transitionTo(ClaimStatus target) {
@@ -151,6 +200,32 @@ public class Claim {
 
     public long getVersion() {
         return version;
+    }
+
+    private static void requireReference(String value, int maximum, String field) {
+        if (value == null || value.isBlank() || value.length() > maximum) {
+            throw new IllegalArgumentException("Invalid " + field);
+        }
+    }
+
+    private static void requireAmount(BigDecimal value) {
+        if (value == null
+                || value.signum() <= 0
+                || value.scale() > 2
+                || value.precision() - value.scale() > 16) {
+            throw new IllegalArgumentException(
+                    "Amount must be positive with at most 16 integer and 2 fraction digits");
+        }
+    }
+
+    private static void requireCurrency(String value) {
+        if (value == null || !value.matches("[A-Z]{3}"))
+            throw new IllegalArgumentException("Invalid currency");
+    }
+
+    private static void requireServiceDate(LocalDate value) {
+        if (value == null || value.isAfter(LocalDate.now()))
+            throw new IllegalArgumentException("Invalid service date");
     }
 
     private void requireDraft(String message) {
