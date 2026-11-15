@@ -1,0 +1,45 @@
+name: Backend verification
+on:
+  push:
+    branches: [main, feature/claim-management-backend]
+  pull_request:
+    paths: ['backend/**', '.github/workflows/backend.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_SA_PASSWORD: 'ClaimIQ_CI_only_2026!'
+        ports: ['1433:1433']
+        options: >-
+          --health-cmd="/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'ClaimIQ_CI_only_2026!' -C -Q 'SELECT 1'"
+          --health-interval=10s --health-timeout=5s --health-retries=20
+    env:
+      # Synthetic, disposable CI database only. Never use these credentials elsewhere.
+      CLAIMIQ_IT_ADMIN_URL: 'jdbc:sqlserver://localhost:1433;databaseName=master;encrypt=true;trustServerCertificate=true'
+      CLAIMIQ_IT_USERNAME: sa
+      CLAIMIQ_IT_PASSWORD: 'ClaimIQ_CI_only_2026!'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+      - name: Unit, security, and SQL Server integration tests
+        working-directory: backend
+        run: bash mvnw -B -Psqlserver-it clean verify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-reports
+          path: |
+            backend/target/surefire-reports/
+            backend/target/failsafe-reports/
