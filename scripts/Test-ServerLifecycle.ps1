@@ -64,6 +64,21 @@ try {
     $null=& $entry stop @common 6>&1 | Out-String
     foreach($name in 'ai','backend','frontend'){Assert ((Status $name).Status -eq 'stopped') "$name survived stop."}
 
+    # Vite can bind localhost to IPv6 after a configuration reload.
+    $nodeExe=(Get-Command node -CommandType Application | Select-Object -First 1).Source
+    $vite=Join-Path $ProjectRoot 'frontend\node_modules\vite\bin\vite.js'
+    $logBase=Join-Path $env:TEMP ('ClaimIQ-ipv6-'+[guid]::NewGuid().ToString('N'))
+    $foreground=Start-Process -FilePath $nodeExe -ArgumentList "`"$vite`" --host ::1 --port 15173" -WorkingDirectory (Join-Path $ProjectRoot 'frontend') -WindowStyle Hidden -PassThru -RedirectStandardOutput "$logBase.out.log" -RedirectStandardError "$logBase.err.log"
+    $ready=$false
+    for($attempt=0;$attempt -lt 20;$attempt++) {
+        try {$ready=(Invoke-WebRequest -UseBasicParsing -Uri 'http://[::1]:15173/' -TimeoutSec 2).StatusCode -eq 200} catch {}
+        if($ready){break}
+        Start-Sleep -Milliseconds 500
+    }
+    Assert $ready 'The IPv6 frontend fixture did not start.'
+    Assert ((Status 'frontend').Status -eq 'running') 'An IPv6 localhost frontend was incorrectly marked unhealthy.'
+    $null=& $manager -Component frontend -Action stop -Port 15173
+
     # A backend port collision must leave that listener intact and roll back newly started AI.
     $collision=New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback,18081)
     $collision.Start()
@@ -72,7 +87,7 @@ try {
     Assert $failed 'An occupied backend port was accepted.'
     Assert ((Status 'ai').Status -eq 'stopped') 'Failed startup left a new AI process running.'
     Assert ((Status 'backend').PID -eq $PID) 'The unrelated port owner was stopped.'
-    Write-Output 'PASS: ordered startup, token output, repeated start, real assessment, restart/token rotation, repeated stop and failure rollback.'
+    Write-Output 'PASS: ordered startup, token output, repeated start, real assessment, restart/token rotation, repeated stop, IPv6 readiness and failure rollback.'
 } finally {
     if($collision){$collision.Stop()}
     $null=& $entry stop @common 6>&1 | Out-String

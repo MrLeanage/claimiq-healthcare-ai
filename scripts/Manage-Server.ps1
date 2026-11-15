@@ -9,7 +9,7 @@ param(
     [string] $BackendUrl,
     [string] $AiUrl,
     [string] $PythonExe,
-    [ValidateRange(5,180)][int] $TimeoutSeconds = 90
+    [ValidateRange(5,600)][int] $TimeoutSeconds = 300
 )
 $ErrorActionPreference='Stop'
 $projectRoot=[IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent))
@@ -54,7 +54,7 @@ function Get-Worker {
     return $null
 }
 function Test-Ready {
-    $url=if($Component -eq 'backend'){"http://127.0.0.1:$Port/actuator/health"}elseif($Component -eq 'ai'){"http://127.0.0.1:$Port/health"}else{"http://127.0.0.1:$Port/"}
+    $url=if($Component -eq 'backend'){"http://127.0.0.1:$Port/actuator/health"}elseif($Component -eq 'ai'){"http://127.0.0.1:$Port/health"}else{"http://localhost:$Port/"}
     try {
         $request=[Net.HttpWebRequest]::Create($url);$request.Timeout=2000;$request.Proxy=$null
         $response=$request.GetResponse()

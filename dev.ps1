@@ -8,6 +8,7 @@ param(
     [string] $JavaHome,
     [string] $PythonExe,
     [string] $AuthLibraryPath,
+    [ValidateRange(5,600)][int] $StartupTimeoutSeconds=300,
     [ValidateSet('SqlServer','Memory')][string] $Database
 )
 $ErrorActionPreference='Stop'
@@ -16,7 +17,7 @@ if($Task -eq 'help') {
     'Starts AI, backend, then frontend; prints status and current demo tokens.'
     'Defaults: AI 8090, backend 8081 (SQL Server), frontend 5173.'
     'Use -Service ai|backend|frontend to manage one component.'
-    'Options: -AiPort -BackendPort -FrontendPort -PythonExe -JavaHome -AuthLibraryPath -Database SqlServer|Memory'
+    'Options: -AiPort -BackendPort -FrontendPort -PythonExe -JavaHome -AuthLibraryPath -StartupTimeoutSeconds -Database SqlServer|Memory'
     'The .cmd wrapper uses a process-only PowerShell execution-policy override.'
     'Read scripts/README.md for setup, logs, port ownership and shutdown behavior.'
     return
@@ -24,7 +25,7 @@ if($Task -eq 'help') {
 $manager=Join-Path $PSScriptRoot 'scripts\Manage-Server.ps1'
 $order=@('ai','backend','frontend')
 function Invoke-Component([string]$Name,[string]$Action) {
-    $options=@{Component=$Name;Action=$Action}
+    $options=@{Component=$Name;Action=$Action;TimeoutSeconds=$StartupTimeoutSeconds}
     switch($Name) {
         'ai' {
             if($AiPort){$options.Port=$AiPort}
