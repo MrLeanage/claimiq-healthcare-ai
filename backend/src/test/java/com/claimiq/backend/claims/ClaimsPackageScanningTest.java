@@ -10,6 +10,7 @@ import com.claimiq.backend.claims.domain.Claim;
 import com.claimiq.backend.claims.mapper.ClaimMapper;
 import com.claimiq.backend.claims.repository.ClaimRepository;
 import com.claimiq.backend.claims.service.ClaimService;
+import com.claimiq.backend.claims.service.impl.DefaultClaimService;
 import jakarta.persistence.Entity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
@@ -36,6 +37,10 @@ class ClaimsPackageScanningTest {
                             assertNotNull(context.getBean(ClaimController.class));
                             assertNotNull(context.getBean(ApiExceptionHandler.class));
                             assertNotNull(context.getBean(ClaimService.class));
+                            assertEquals(1, context.getBeansOfType(ClaimService.class).size());
+                            assertSame(
+                                    context.getBean(DefaultClaimService.class),
+                                    context.getBean(ClaimService.class));
                             assertNotNull(context.getBean(ClaimMapper.class));
                         });
     }

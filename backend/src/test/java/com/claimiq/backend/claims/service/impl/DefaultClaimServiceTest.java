@@ -1,4 +1,6 @@
-package com.claimiq.backend.claims.service;
+package com.claimiq.backend.claims.service.impl;
+
+import com.claimiq.backend.claims.service.ClaimService;
 
 import com.claimiq.backend.claims.domain.Claim;
 import com.claimiq.backend.claims.domain.ClaimStatus;
@@ -17,9 +19,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageRequest;
 
-class ClaimServiceTest {
+class DefaultClaimServiceTest {
     ClaimRepository repository = mock(ClaimRepository.class);
-    ClaimService service = new ClaimService(repository, new ClaimMapper());
+    ClaimService service = new DefaultClaimService(repository, new ClaimMapper());
     ClaimRequest request =
             new ClaimRequest(
                     "PAT-100",

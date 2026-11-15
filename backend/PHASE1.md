@@ -7,7 +7,8 @@ The claims feature stays together under `com.claimiq.backend.claims`:
 ```text
 claims/
 ├── api/         REST controller and HTTP exception handler
-├── service/     Use-case orchestration and transaction boundaries
+├── service/     ClaimService use-case contract
+│   └── impl/    DefaultClaimService orchestration and transactions
 ├── domain/      JPA entity, claim status, and lifecycle rules
 ├── repository/  Spring Data JPA repository
 ├── dto/         Request and response records
@@ -24,6 +25,10 @@ repository scanning includes the entire feature without custom scan settings.
 status or submission-time setters. Detail setters reject edits after submission,
 including calls made outside the service. The service coordinates loading,
 mapping, and persistence; the domain owns the transition rules.
+
+Controllers depend on the `ClaimService` interface. Spring injects its single
+`DefaultClaimService` implementation, where transaction annotations and
+repository dependencies reside. Implementation tests mirror `service.impl`.
 
 ## API
 

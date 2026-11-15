@@ -1,70 +1,23 @@
 package com.claimiq.backend.claims.service;
 
-import com.claimiq.backend.claims.domain.Claim;
 import com.claimiq.backend.claims.domain.ClaimStatus;
 import com.claimiq.backend.claims.dto.ClaimRequest;
 import com.claimiq.backend.claims.dto.ClaimResponse;
-import com.claimiq.backend.claims.exception.ClaimNotFoundException;
-import com.claimiq.backend.claims.mapper.ClaimMapper;
-import com.claimiq.backend.claims.repository.ClaimRepository;
 import java.util.UUID;
-import org.springframework.data.domain.*;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-@Service
-@Transactional
-public class ClaimService {
-    private final ClaimRepository repository;
-    private final ClaimMapper mapper;
+/** Public use cases for managing claims. */
+public interface ClaimService {
+    ClaimResponse create(ClaimRequest request);
 
-    public ClaimService(ClaimRepository repository, ClaimMapper mapper) {
-        this.repository = repository;
-        this.mapper = mapper;
-    }
+    ClaimResponse get(UUID id);
 
-    public ClaimResponse create(ClaimRequest request) {
-        Claim claim = new Claim();
-        mapper.apply(request, claim);
-        claim.setClaimNumber(
-                "CLM-"
-                        + UUID.randomUUID()
-                                .toString()
-                                .replace("-", "")
-                                .substring(0, 20)
-                                .toUpperCase());
-        return mapper.toResponse(repository.save(claim));
-    }
+    Page<ClaimResponse> list(Pageable pageable);
 
-    @Transactional(readOnly = true)
-    public ClaimResponse get(UUID id) {
-        return mapper.toResponse(find(id));
-    }
+    ClaimResponse update(UUID id, ClaimRequest request);
 
-    @Transactional(readOnly = true)
-    public Page<ClaimResponse> list(Pageable pageable) {
-        return repository.findAll(pageable).map(mapper::toResponse);
-    }
+    ClaimResponse submit(UUID id);
 
-    public ClaimResponse update(UUID id, ClaimRequest request) {
-        Claim claim = find(id);
-        mapper.apply(request, claim);
-        return mapper.toResponse(repository.save(claim));
-    }
-
-    public ClaimResponse submit(UUID id) {
-        Claim claim = find(id);
-        claim.submit();
-        return mapper.toResponse(repository.save(claim));
-    }
-
-    public ClaimResponse transition(UUID id, ClaimStatus target) {
-        Claim claim = find(id);
-        claim.transitionTo(target);
-        return mapper.toResponse(repository.save(claim));
-    }
-
-    private Claim find(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new ClaimNotFoundException(id));
-    }
+    ClaimResponse transition(UUID id, ClaimStatus target);
 }
