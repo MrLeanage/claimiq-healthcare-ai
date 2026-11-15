@@ -57,5 +57,28 @@ No historical medical or insurance information is invented by migration V5.
 Updates replace the context block and ordered diagnosis/service collections in
 the same transaction as the claim and audit event. Root optimistic locking also
 protects collection-only edits. Audit rows continue to store only action metadata,
-not insurance identifiers or clinical narrative. There is no AI assessment call
-or generated risk score in this change; these are inputs for a later assessment.
+not insurance identifiers or clinical narrative. Assessments use the saved context
+through the endpoint below.
+
+## Assess a saved claim
+
+`POST /api/v1/claims/{id}/assessment` takes no request body. Send the bearer token
+and current quoted `If-Match` ETag. Claim-read scope and ownership checks run
+before inference. Missing context returns 422; missing/malformed/stale ETags
+return 428/400/412. A claim changed during inference also returns 412.
+
+The response contains `claimId`, `claimVersion`, and `assessment` with
+`modelVersion`, `trainingData`, `assessedAt`, `score` (0-100), `riskLevel`,
+`interceptLogOdds`, `findings`, and `limitations`. Each finding includes a code,
+field, recorded evidence, log-odds contribution and suggested correction.
+Responses are not cached. Assessment does not change status or persist history.
+
+The backend sends coverage/authorization states, coverage check date, service
+code systems, and supporting-context presence. It omits identifiers, actual
+clinical codes, financial values and clinical narrative. The Python service uses
+synthetic outcomes and does not verify coverage, coding or medical necessity.
+No result guarantees payer acceptance or denial.
+
+The backend has a 2-second connect timeout and 5-second read timeout. An
+unavailable/invalid model response returns 503 with `ASSESSMENT_UNAVAILABLE`;
+there is no fallback score. Missing-context errors use the same error shape.

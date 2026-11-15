@@ -1,0 +1,45 @@
+{
+  "features": [
+    "coverage_inactive",
+    "coverage_unknown",
+    "coverage_unverified",
+    "authorization_denied",
+    "authorization_pending",
+    "authorization_unknown",
+    "local_codes",
+    "summary_missing"
+  ],
+  "weights": [
+    2.670467610216603,
+    1.3031022320887709,
+    0.7523776243963356,
+    2.623686500422409,
+    1.6140406626598471,
+    0.5946907972291013,
+    0.5582139558202066,
+    0.4776292929622064
+  ],
+  "intercept": -2.9071549956378524,
+  "version": "synthetic-logistic-v1",
+  "trainingData": "SYNTHETIC",
+  "seed": 2718,
+  "algorithm": "logistic regression",
+  "trainingRows": 3200,
+  "testRows": 800,
+  "generatorIntercept": -3.2,
+  "generatorWeights": [
+    3.1,
+    1.4,
+    0.8,
+    3.0,
+    1.8,
+    1.1,
+    0.7,
+    0.5
+  ],
+  "syntheticTestMetrics": {
+    "accuracyAtThreshold05": 0.7725,
+    "brierScore": 0.15703670754051896,
+    "warning": "Measures fit to invented synthetic outcomes only; not clinical or payer validation."
+  }
+}
