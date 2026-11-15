@@ -30,6 +30,15 @@ Controllers depend on the `ClaimService` interface. Spring injects its single
 `DefaultClaimService` implementation, where transaction annotations and
 repository dependencies reside. Implementation tests mirror `service.impl`.
 
+The service also depends on `ClaimNumberGenerator`, so numbering policy can be
+replaced without modifying claim orchestration. `UuidClaimNumberGenerator`
+preserves the existing `CLM-` plus 20 uppercase hexadecimal characters format.
+HTTP errors use the immutable `ApiError` record with the same JSON fields as
+before: `timestamp`, `status`, `code`, and `message`.
+
+See [architecture decisions](../docs/architecture/README.md) for the OOP/SOLID
+review scope, tradeoffs, and automated safeguards.
+
 ## API
 
 Base path: `/api/v1/claims`.

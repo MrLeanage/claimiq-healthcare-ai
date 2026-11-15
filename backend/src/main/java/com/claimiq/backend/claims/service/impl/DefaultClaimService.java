@@ -1,6 +1,7 @@
 package com.claimiq.backend.claims.service.impl;
 
 import com.claimiq.backend.claims.service.ClaimService;
+import com.claimiq.backend.claims.service.ClaimNumberGenerator;
 
 import com.claimiq.backend.claims.domain.Claim;
 import com.claimiq.backend.claims.domain.ClaimStatus;
@@ -19,23 +20,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class DefaultClaimService implements ClaimService {
     private final ClaimRepository repository;
     private final ClaimMapper mapper;
+    private final ClaimNumberGenerator numberGenerator;
 
-    public DefaultClaimService(ClaimRepository repository, ClaimMapper mapper) {
+    public DefaultClaimService(
+            ClaimRepository repository, ClaimMapper mapper, ClaimNumberGenerator numberGenerator) {
         this.repository = repository;
         this.mapper = mapper;
+        this.numberGenerator = numberGenerator;
     }
 
     @Override
     public ClaimResponse create(ClaimRequest request) {
         Claim claim = new Claim();
         mapper.apply(request, claim);
-        claim.setClaimNumber(
-                "CLM-"
-                        + UUID.randomUUID()
-                                .toString()
-                                .replace("-", "")
-                                .substring(0, 20)
-                                .toUpperCase());
+        claim.setClaimNumber(numberGenerator.generate());
         return mapper.toResponse(repository.save(claim));
     }
 

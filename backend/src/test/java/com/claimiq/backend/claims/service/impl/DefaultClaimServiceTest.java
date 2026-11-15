@@ -21,7 +21,8 @@ import org.springframework.data.domain.PageRequest;
 
 class DefaultClaimServiceTest {
     ClaimRepository repository = mock(ClaimRepository.class);
-    ClaimService service = new DefaultClaimService(repository, new ClaimMapper());
+    ClaimService service =
+            new DefaultClaimService(repository, new ClaimMapper(), () -> "CLM-TEST-001");
     ClaimRequest request =
             new ClaimRequest(
                     "PAT-100",
@@ -39,7 +40,7 @@ class DefaultClaimServiceTest {
     void createsDraft() {
         ClaimResponse response = service.create(request);
         assertEquals(ClaimStatus.DRAFT, response.status());
-        assertTrue(response.claimNumber().startsWith("CLM-"));
+        assertEquals("CLM-TEST-001", response.claimNumber());
         verify(repository).save(any());
     }
 
