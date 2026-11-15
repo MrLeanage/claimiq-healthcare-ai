@@ -34,3 +34,21 @@ checks migration upgrades and relational behavior on disposable SQL Server
 databases. Keep the published V1 migration unchanged; use forward migrations.
 
 See [the API contract](../api/README.md) and [backend guide](../../backend/README.md).
+
+## Assessment boundary
+
+```text
+Authenticated assessment endpoint -> ClaimService (scope + ownership + version)
+                                  -> Python HTTP service -> saved logistic model
+```
+
+The backend extracts only the indicators used by this model. Patient, provider,
+plan and member references, code identifiers, and narrative text do not cross
+this boundary. Timeouts and service failures return an unavailable state. A
+second claim-version check rejects results computed while the saved claim changed.
+
+The Python runtime has no third-party dependencies. Training generates explicit
+synthetic outcomes and learns weights; inference loads a versioned JSON artifact.
+Contributions are exact on the log-odds scale. Corrective actions come from a
+curated catalogue. These are advisory findings, not payer verification.
+Assessment persistence and external outcome validation are not implemented.
