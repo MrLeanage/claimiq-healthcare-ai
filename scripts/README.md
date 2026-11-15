@@ -101,7 +101,8 @@ Committed SQL data remains durable; SQL Server rolls back incomplete transaction
 Failed startup reports its log folder. Readiness waits up to 300 seconds per
 service (override with `-StartupTimeoutSeconds`, up to 600), allowing for Maven
 compilation and SQL Server startup on a busy machine. Frontend readiness checks
-the displayed localhost URL, supporting either IPv4 or IPv6 binding. The manager cleans
+both IPv4 and IPv6 loopback addresses instead of depending on DNS address order.
+The manager cleans
 up timed-out starts. A failed root start rolls back only services it newly started;
 already-running services are preserved. Stop attempts every component and reports
 any occupied/unrecognized ports. Root commands are serialized to avoid overlapping

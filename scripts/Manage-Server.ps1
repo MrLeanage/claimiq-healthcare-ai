@@ -54,12 +54,15 @@ function Get-Worker {
     return $null
 }
 function Test-Ready {
-    $url=if($Component -eq 'backend'){"http://127.0.0.1:$Port/actuator/health"}elseif($Component -eq 'ai'){"http://127.0.0.1:$Port/health"}else{"http://localhost:$Port/"}
-    try {
-        $request=[Net.HttpWebRequest]::Create($url);$request.Timeout=2000;$request.Proxy=$null
-        $response=$request.GetResponse()
-        try {return [int]$response.StatusCode -eq 200} finally {$response.Close()}
-    } catch {return $false}
+    $urls=if($Component -eq 'backend'){@("http://127.0.0.1:$Port/actuator/health")}elseif($Component -eq 'ai'){@("http://127.0.0.1:$Port/health")}else{@("http://127.0.0.1:$Port/","http://[::1]:$Port/")}
+    foreach($url in $urls) {
+        try {
+            $request=[Net.HttpWebRequest]::Create($url);$request.Timeout=2000;$request.Proxy=$null
+            $response=$request.GetResponse()
+            try {if([int]$response.StatusCode -eq 200){return $true}} finally {$response.Close()}
+        } catch {}
+    }
+    return $false
 }
 function Get-Status {
     $listener=Get-Listener
