@@ -49,7 +49,9 @@ export function ClaimAssessment({
   if (!api.assess) return null;
   return (
     <section aria-labelledby="assessment-title" className="claim-section">
-      <h3 id="assessment-title">Pre-submission risk assessment</h3>
+      <h3 className="claim-section-title" id="assessment-title">
+        Pre-submission risk assessment
+      </h3>
       <p className="notice">
         Synthetic demonstration. Scores are not validated payer denial
         probabilities. Human review is required.
