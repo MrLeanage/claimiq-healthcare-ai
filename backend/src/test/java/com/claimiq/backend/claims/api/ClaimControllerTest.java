@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.*;
 
 import com.claimiq.backend.claims.dto.ClaimResponse;
+import com.claimiq.backend.claims.service.ClaimCreationService;
 import com.claimiq.backend.claims.service.ClaimService;
 
 import org.junit.jupiter.api.Test;
@@ -16,9 +17,11 @@ import java.util.UUID;
 @ExtendWith(MockitoExtension.class)
 class ClaimControllerTest {
     @Mock private ClaimService service;
+    @Mock private ClaimCreationService creation;
+
     @Test
     void delegatesToTheServiceContract() {
-        ClaimController controller = new ClaimController(service);
+        ClaimController controller = new ClaimController(service, creation);
         UUID id = UUID.randomUUID();
         ClaimResponse response =
                 new ClaimResponse(

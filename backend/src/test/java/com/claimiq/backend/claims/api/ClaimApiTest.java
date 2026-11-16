@@ -8,6 +8,7 @@ import com.claimiq.backend.claims.domain.ClaimStatus;
 import com.claimiq.backend.claims.dto.ClaimResponse;
 import com.claimiq.backend.claims.exception.ClaimNotFoundException;
 import com.claimiq.backend.claims.exception.InvalidClaimTransitionException;
+import com.claimiq.backend.claims.service.ClaimCreationService;
 import com.claimiq.backend.claims.service.ClaimService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -28,13 +29,14 @@ import java.util.UUID;
 @ExtendWith(MockitoExtension.class)
 class ClaimApiTest {
     @Mock private ClaimService service;
+    @Mock private ClaimCreationService creation;
     private final JsonMapper json = JsonMapper.builder().build();
     private MockMvc mvc;
 
     @BeforeEach
     void setup() {
         mvc =
-                MockMvcBuilders.standaloneSetup(new ClaimController(service))
+                MockMvcBuilders.standaloneSetup(new ClaimController(service, creation))
                         .setControllerAdvice(new ApiExceptionHandler())
                         .build();
     }
@@ -122,7 +124,7 @@ class ClaimApiTest {
                         null,
                         null,
                         0);
-        when(service.create(any())).thenReturn(response);
+        when(creation.create(any(), isNull())).thenReturn(response);
         MvcResult result =
                 mvc.perform(
                                 post("/api/v1/claims")

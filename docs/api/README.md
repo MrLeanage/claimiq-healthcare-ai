@@ -4,6 +4,17 @@ Base route: `/api/v1/claims`. Existing bearer scopes, ownership checks, ETags an
 `If-Match` requirements remain unchanged. Swagger is available at `/api-docs`
 when the documentation profile is enabled.
 
+Creation supports an optional UUID `Idempotency-Key` header. Reuse the same key
+and payload after an uncertain response. A replay returns the existing claim's
+current representation and ETag with 201; a different payload with that key
+returns 409 `IDEMPOTENCY_CONFLICT`. Keys are scoped to the authenticated subject.
+Calls without a key create a new draft on every successful request.
+
+List responses contain claim summaries without `context`. Fetch `/{id}` for the
+full insurance, diagnoses, service lines and clinical summary. The frontend uses
+one retry key per open creation form; refreshing the form creates a new retry
+context, so check the claims list after an uncertain save before starting again.
+
 ## Create / update example
 
 ```json

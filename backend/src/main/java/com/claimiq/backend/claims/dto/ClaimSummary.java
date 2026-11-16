@@ -1,0 +1,23 @@
+package com.claimiq.backend.claims.dto;
+
+import com.claimiq.backend.claims.domain.ClaimStatus;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.UUID;
+
+/** List projection: clinical context is available only from the detail endpoint. */
+public record ClaimSummary(
+        UUID id,
+        String claimNumber,
+        String patientReference,
+        String providerReference,
+        BigDecimal amount,
+        String currency,
+        LocalDate serviceDate,
+        ClaimStatus status,
+        Instant createdAt,
+        Instant updatedAt,
+        Instant submittedAt,
+        long version) {}

@@ -23,7 +23,7 @@ export interface ClaimContext {
 }
 export type ClaimStatus =
   'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
-export interface Claim {
+export interface ClaimSummary {
   readonly id: string;
   readonly claimNumber: string;
   readonly patientReference: string;
@@ -36,6 +36,8 @@ export interface Claim {
   readonly updatedAt: string;
   readonly submittedAt: string | null;
   readonly version: number;
+}
+export interface Claim extends ClaimSummary {
   readonly context: ClaimContext | null;
 }
 export interface ClaimInput {
@@ -47,7 +49,7 @@ export interface ClaimInput {
   context: ClaimContext;
 }
 export interface ClaimPage {
-  content: Claim[];
+  content: ClaimSummary[];
   totalElements: number;
   totalPages: number;
   number: number;
@@ -65,7 +67,7 @@ export interface ClaimsGateway {
   ): Promise<import('./assessment').Assessment>;
   list(page: number, signal?: AbortSignal): Promise<ClaimPage>;
   get(id: string, signal?: AbortSignal): Promise<VersionedClaim>;
-  create(input: ClaimInput): Promise<VersionedClaim>;
+  create(input: ClaimInput, idempotencyKey?: string): Promise<VersionedClaim>;
   update(id: string, input: ClaimInput, etag: string): Promise<VersionedClaim>;
   submit(id: string, etag: string): Promise<VersionedClaim>;
   transition(

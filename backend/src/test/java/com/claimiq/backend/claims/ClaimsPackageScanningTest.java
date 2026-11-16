@@ -29,6 +29,18 @@ class ClaimsPackageScanningTest {
                 .withUserConfiguration(BackendApplication.class)
                 .withBean(ClaimRepository.class, () -> mock(ClaimRepository.class))
                 .withBean(
+                        com.claimiq.backend.claims.repository.ClaimCreationRequestRepository.class,
+                        () ->
+                                mock(
+                                        com.claimiq.backend.claims.repository
+                                                .ClaimCreationRequestRepository.class))
+                .withBean(
+                        org.springframework.transaction.PlatformTransactionManager.class,
+                        () ->
+                                mock(
+                                        org.springframework.transaction.PlatformTransactionManager
+                                                .class))
+                .withBean(
                         com.claimiq.backend.claims.repository.ClaimAuditRepository.class,
                         () ->
                                 mock(

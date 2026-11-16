@@ -194,4 +194,110 @@ class ClaimSecurityTest {
         assertEquals("TRANSITION", events.get(2).getAction());
         assertEquals(2, events.get(2).getClaimVersion());
     }
+
+    @Test
+    void keyedCreationReplaysOneClaimAndRejectsChangedPayload() throws Exception {
+        String subject = "retry-" + UUID.randomUUID();
+        String key = UUID.randomUUID().toString();
+        String id = createWithKey(subject, key, REQUEST);
+        assertEquals(id, createWithKey(subject, key, REQUEST));
+        var conflict =
+                mvc.perform(
+                                post("/api/v1/claims")
+                                        .with(user(subject, "claims:write"))
+                                        .header("Idempotency-Key", key)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(REQUEST.replace("PAT-DEMO", "PAT-CHANGED")))
+                        .andReturn()
+                        .getResponse();
+        assertEquals(409, conflict.getStatus());
+        assertEquals(
+                "IDEMPOTENCY_CONFLICT",
+                json.readTree(conflict.getContentAsString()).get("code").asText());
+        assertEquals(1, audit.findAllByClaimIdOrderByOccurredAtAsc(UUID.fromString(id)).size());
+        assertNotEquals(id, createWithKey(subject + "-other", key, REQUEST));
+    }
+
+    @Test
+    void failedCreationRollsBackTheReservation() throws Exception {
+        String subject = "rollback-" + UUID.randomUUID();
+        String key = UUID.randomUUID().toString();
+        var invalid =
+                mvc.perform(
+                                post("/api/v1/claims")
+                                        .with(user(subject, "claims:write"))
+                                        .header("Idempotency-Key", key)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                REQUEST.replace(
+                                                        "\"amount\":125.50", "\"amount\":125.49")))
+                        .andReturn()
+                        .getResponse();
+        assertEquals(400, invalid.getStatus());
+        assertNotNull(createWithKey(subject, key, REQUEST));
+    }
+
+    @Test
+    void concurrentRetriesCreateOneClaimAndOneAuditEvent() throws Exception {
+        String subject = "concurrent-" + UUID.randomUUID();
+        String key = UUID.randomUUID().toString();
+        var start = new java.util.concurrent.CountDownLatch(1);
+        var workers = java.util.concurrent.Executors.newFixedThreadPool(2);
+        try {
+            java.util.concurrent.Callable<String> attempt =
+                    () -> {
+                        assertTrue(start.await(10, java.util.concurrent.TimeUnit.SECONDS));
+                        return createWithKey(subject, key, REQUEST);
+                    };
+            var first = workers.submit(attempt);
+            var second = workers.submit(attempt);
+            start.countDown();
+            String id = first.get(15, java.util.concurrent.TimeUnit.SECONDS);
+            assertEquals(id, second.get(15, java.util.concurrent.TimeUnit.SECONDS));
+            assertEquals(1, audit.findAllByClaimIdOrderByOccurredAtAsc(UUID.fromString(id)).size());
+        } finally {
+            workers.shutdownNow();
+        }
+    }
+
+    @Autowired jakarta.persistence.EntityManagerFactory entityManagers;
+
+    @Test
+    void listingDoesNotReturnOrLoadClinicalCollections() throws Exception {
+        String subject = "summary-" + UUID.randomUUID();
+        createWithKey(subject, UUID.randomUUID().toString(), REQUEST);
+        var statistics = entityManagers.unwrap(org.hibernate.SessionFactory.class).getStatistics();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
+        try {
+            var response =
+                    mvc.perform(get("/api/v1/claims").with(user(subject, "claims:read")))
+                            .andReturn()
+                            .getResponse();
+            assertEquals(200, response.getStatus());
+            var content = json.readTree(response.getContentAsString()).get("content");
+            assertEquals(1, content.size());
+            assertFalse(content.get(0).has("context"));
+            assertFalse(response.getContentAsString().contains("MEM-DEMO"));
+            assertEquals(0, statistics.getCollectionLoadCount());
+            assertEquals(0, statistics.getEntityLoadCount());
+        } finally {
+            statistics.setStatisticsEnabled(false);
+        }
+    }
+
+    private String createWithKey(String subject, String key, String body) throws Exception {
+        var response =
+                mvc.perform(
+                                post("/api/v1/claims")
+                                        .with(user(subject, "claims:write"))
+                                        .header("Idempotency-Key", key)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(body))
+                        .andReturn()
+                        .getResponse();
+        assertEquals(201, response.getStatus(), response.getContentAsString());
+        assertNotNull(response.getHeader("ETag"));
+        return json.readTree(response.getContentAsString()).get("id").asText();
+    }
 }

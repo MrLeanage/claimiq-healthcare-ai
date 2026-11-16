@@ -107,6 +107,7 @@ function Editor({
   const navigate = useNavigate();
   const guard = useDraftGuard();
   const active = useRef(true);
+  const [creationKey] = useState(() => crypto.randomUUID());
   const markSaving = guard.markSaving;
   useEffect(() => {
     active.current = true;
@@ -125,7 +126,7 @@ function Editor({
     try {
       const saved = initial
         ? await api.update(initial.claim.id, input, initial.etag)
-        : await api.create(input);
+        : await api.create(input, creationKey);
       if (!active.current) return;
       guard.markDirty(false);
       guard.markSaving(false);

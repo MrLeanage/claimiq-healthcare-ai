@@ -3,6 +3,7 @@ package com.claimiq.backend.claims.api;
 import com.claimiq.backend.claims.dto.ApiError;
 import com.claimiq.backend.claims.exception.ClaimNotFoundException;
 import com.claimiq.backend.claims.exception.ClaimVersionConflictException;
+import com.claimiq.backend.claims.exception.IdempotencyConflictException;
 import com.claimiq.backend.claims.exception.InvalidClaimTransitionException;
 import com.claimiq.backend.claims.exception.VersionPreconditionRequiredException;
 
@@ -17,6 +18,11 @@ import java.time.Instant;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(IdempotencyConflictException.class)
+    ResponseEntity<ApiError> idempotencyConflict(IdempotencyConflictException e) {
+        return error(HttpStatus.CONFLICT, "IDEMPOTENCY_CONFLICT", e.getMessage());
+    }
+
     @ExceptionHandler(ClaimNotFoundException.class)
     ResponseEntity<ApiError> notFound(ClaimNotFoundException e) {
         return error(HttpStatus.NOT_FOUND, "CLAIM_NOT_FOUND", e.getMessage());

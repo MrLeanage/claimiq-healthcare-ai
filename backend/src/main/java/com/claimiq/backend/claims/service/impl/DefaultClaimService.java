@@ -5,6 +5,7 @@ import com.claimiq.backend.claims.domain.ClaimAuditEvent;
 import com.claimiq.backend.claims.domain.ClaimStatus;
 import com.claimiq.backend.claims.dto.ClaimRequest;
 import com.claimiq.backend.claims.dto.ClaimResponse;
+import com.claimiq.backend.claims.dto.ClaimSummary;
 import com.claimiq.backend.claims.exception.ClaimNotFoundException;
 import com.claimiq.backend.claims.exception.ClaimVersionConflictException;
 import com.claimiq.backend.claims.mapper.ClaimMapper;
@@ -62,14 +63,13 @@ public class DefaultClaimService implements ClaimService {
 
     @Transactional(readOnly = true)
     @Override
-    public Page<ClaimResponse> list(Pageable pageable) {
+    public Page<ClaimSummary> list(Pageable pageable) {
         access.requireReadPermission();
         if (pageable.isUnpaged() || pageable.getPageSize() > 100)
             throw new IllegalArgumentException("Use pages of at most 100 claims");
-        return (access.canReview()
-                        ? repository.findAll(pageable)
-                        : repository.findAllByOwnerSubject(access.subject(), pageable))
-                .map(mapper::toResponse);
+        return access.canReview()
+                ? repository.findAllProjectedBy(pageable)
+                : repository.findAllProjectedByOwnerSubject(access.subject(), pageable);
     }
 
     @Override

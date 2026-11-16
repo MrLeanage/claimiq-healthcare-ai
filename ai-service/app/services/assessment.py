@@ -95,7 +95,8 @@ def assess(payload, model):
         int(not str(context.get("clinicalSummary") or "").strip()),
     ]
     findings = []
-    for name, value, weight in zip(FEATURES, values, model["weights"]):
+    score = probability(model, values)
+    for name, value, weight in zip(FEATURES, values, model["weights"], strict=True):
         if value:
             title, field, correction = CATALOGUE[name]
             evidence = (
@@ -118,7 +119,6 @@ def assess(payload, model):
                 )
             )
     findings.sort(key=lambda f: f["contributionLogOdds"], reverse=True)
-    score = probability(model, values)
     return dict(
         modelVersion=model["version"],
         trainingData="SYNTHETIC",

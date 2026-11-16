@@ -84,6 +84,14 @@ The server is the validation and authorization authority. Monetary entry is
 limited to exact JavaScript cent arithmetic; extending large-value support
 requires a decimal-string API.
 
+Each open creation form keeps one UUID retry key. Retrying after a connection
+failure reuses that key, so a committed draft is returned instead of duplicated.
+If data changes after a successful but unacknowledged save, the server returns a
+409 and directs the user to check the claims list. The key is held in memory:
+closing or refreshing the form ends that retry context. Check the list before
+starting a new form after an uncertain save. List responses contain summaries;
+clinical context is fetched only when opening a claim.
+
 Fonts are bundled locally. The visual palette references Legacy Health LLC's
 public branding, without implying affiliation. Attachments, user administration,
 audit-history browsing, real payer verification and production login are outside

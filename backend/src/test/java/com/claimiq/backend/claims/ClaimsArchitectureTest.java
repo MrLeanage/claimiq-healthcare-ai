@@ -9,20 +9,24 @@ import com.claimiq.backend.claims.dto.ClaimRequest;
 import com.claimiq.backend.claims.dto.ClaimResponse;
 import com.claimiq.backend.claims.dto.StatusRequest;
 import com.claimiq.backend.claims.repository.ClaimRepository;
+import com.claimiq.backend.claims.service.ClaimCreationService;
 import com.claimiq.backend.claims.service.ClaimNumberGenerator;
 import com.claimiq.backend.claims.service.ClaimService;
 import com.claimiq.backend.claims.service.impl.DefaultClaimService;
+
+import org.junit.jupiter.api.Test;
+
 import java.lang.reflect.Modifier;
 import java.time.Instant;
 import java.util.Arrays;
-import org.junit.jupiter.api.Test;
 
 class ClaimsArchitectureTest {
     @Test
     void controllerDependsOnlyOnTheServiceContract() {
         assertTrue(ClaimService.class.isInterface());
+        assertTrue(ClaimCreationService.class.isInterface());
         assertArrayEquals(
-                new Class<?>[] {ClaimService.class},
+                new Class<?>[] {ClaimService.class, ClaimCreationService.class},
                 ClaimController.class.getConstructors()[0].getParameterTypes());
         assertTrue(
                 Arrays.stream(ClaimService.class.getMethods())
