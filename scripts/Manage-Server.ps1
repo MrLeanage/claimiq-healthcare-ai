@@ -1,13 +1,15 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)][ValidateSet('backend','frontend')][string] $Component,
+    [Parameter(Mandatory=$true)][ValidateSet('backend','frontend','ai')][string] $Component,
     [Parameter(Mandatory=$true)][ValidateSet('start','stop','restart','status','logs','tokens')][string] $Action,
     [ValidateRange(0,65535)][int] $Port = 0,
     [string] $JavaHome,
     [string] $AuthLibraryPath,
     [ValidateSet('SqlServer','Memory')][string] $Database,
     [string] $BackendUrl,
-    [ValidateRange(5,180)][int] $TimeoutSeconds = 90
+    [string] $AiUrl,
+    [string] $PythonExe,
+    [ValidateRange(5,600)][int] $TimeoutSeconds = 300
 )
 $ErrorActionPreference='Stop'
 $projectRoot=[IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent))
@@ -31,6 +33,11 @@ function Get-Listener {
 }
 function Test-Server($Process) {
     if(!$Process){return $false}
+    if($Component -eq 'ai') {
+        $entry=Join-Path $projectRoot 'ai-service\serve.py'
+        return $Process.Name -match '^python(?:w|[0-9.]*)?\.exe$' -and
+            $Process.CommandLine -match ('(?:^|\s)"?' + [regex]::Escape($entry) + '"?(?:\s|$)')
+    }
     if($Component -eq 'frontend') {
         return $Process.Name -eq 'node.exe' -and (Contains-Path $Process.CommandLine (Join-Path $projectRoot 'frontend')) -and $Process.CommandLine -match '[\\/]vite[\\/]bin[\\/]vite\.js'
     }
@@ -47,12 +54,15 @@ function Get-Worker {
     return $null
 }
 function Test-Ready {
-    $url=if($Component -eq 'backend'){"http://127.0.0.1:$Port/actuator/health"}else{"http://127.0.0.1:$Port/"}
-    try {
-        $request=[Net.HttpWebRequest]::Create($url);$request.Timeout=2000;$request.Proxy=$null
-        $response=$request.GetResponse()
-        try {return [int]$response.StatusCode -eq 200} finally {$response.Close()}
-    } catch {return $false}
+    $urls=if($Component -eq 'backend'){@("http://127.0.0.1:$Port/actuator/health")}elseif($Component -eq 'ai'){@("http://127.0.0.1:$Port/health")}else{@("http://127.0.0.1:$Port/","http://[::1]:$Port/")}
+    foreach($url in $urls) {
+        try {
+            $request=[Net.HttpWebRequest]::Create($url);$request.Timeout=2000;$request.Proxy=$null
+            $response=$request.GetResponse()
+            try {if([int]$response.StatusCode -eq 200){return $true}} finally {$response.Close()}
+        } catch {}
+    }
+    return $false
 }
 function Get-Status {
     $listener=Get-Listener
@@ -91,7 +101,7 @@ function Stop-Server {
 function Start-Server {
     $listener=Get-Listener
     if($listener){
-        if(!(Test-Server $listener)){throw "Port $Port belongs to another application (PID $($listener.ProcessId)); choose a different port."}
+        if(!(Test-Server $listener)){throw "Port $Port belongs to an unmanaged or different application (PID $($listener.ProcessId)). Stop its original terminal process, or choose another port. Nothing was stopped."}
         if(!(Test-Ready)){throw "$Component owns port $Port but is unhealthy. Inspect logs or restart it."}
         Write-Host "$Component is already running; no duplicate instance started."
         return
@@ -100,11 +110,16 @@ function Start-Server {
     $runId=[Guid]::NewGuid().ToString('N')
     $configFile=Join-Path $runtime "$runId.json"
     $config=@{projectRoot=$projectRoot;component=$Component;port=$Port;sessionFile=(Join-Path $runtime "$runId.tokens.json")
-        javaHome=$JavaHome;authLibraryPath=$AuthLibraryPath;database=$Database;backendUrl=$BackendUrl}
+        javaHome=$JavaHome;authLibraryPath=$AuthLibraryPath;database=$Database;backendUrl=$BackendUrl;aiUrl=$AiUrl;pythonExe=$PythonExe}
     if(!$config.javaHome -and $state){$config.javaHome=$state.javaHome}
     if(!$config.authLibraryPath -and $state){$config.authLibraryPath=$state.authLibraryPath}
     if(!$config.database){$config.database=if($state){$state.database}else{'SqlServer'}}
     if(!$config.backendUrl){$config.backendUrl=if($state){$state.backendUrl}else{'http://127.0.0.1:8081'}}
+    if(!$config.aiUrl){$config.aiUrl=if($state -and $state.aiUrl){$state.aiUrl}else{'http://127.0.0.1:8090'}}
+    if($Component -eq 'ai') {
+        if(!$config.pythonExe){$config.pythonExe=if($state -and $state.pythonExe -is [string] -and $state.pythonExe){$state.pythonExe}else{'python'}}
+        $config.pythonExe=(Get-Command $config.pythonExe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
+    }
     $config | ConvertTo-Json | Set-Content -LiteralPath $configFile
     $hostExe=Join-Path $PSHOME 'pwsh.exe'
     if(!(Test-Path -LiteralPath $hostExe)){$hostExe=Join-Path $PSHOME 'powershell.exe'}
@@ -140,7 +155,10 @@ try {
     try {$locked=$mutex.WaitOne(1000)}catch [Threading.AbandonedMutexException]{$locked=$true}
     if(!$locked){throw 'Another command is managing this server. Retry when it finishes.'}
     $state=if(Test-Path -LiteralPath $stateFile){Get-Content -LiteralPath $stateFile -Raw | ConvertFrom-Json}else{$null}
-    if(!$Port){$Port=if($state){[int]$state.port}elseif($Component -eq 'backend'){8081}else{5173}}
+    if(!$Port){$Port=if($state){[int]$state.port}elseif($Component -eq 'backend'){8081}elseif($Component -eq 'ai'){8090}else{5173}}
+    if($state -and [int]$state.port -ne $Port -and $Action -in @('stop','restart','start') -and (Get-Worker)) {
+        throw "A managed $Component instance uses port $($state.port). Stop it without a port override before changing ports."
+    }
     switch($Action){
         'start' {Start-Server;Get-Status}
         'stop' {Stop-Server;Get-Status}

@@ -11,13 +11,13 @@ Use Node 24 LTS with npm, Java 17, and Python 3.12+. From the repository root:
 
 ```powershell
 .\frontend\dev.ps1 install
-.\backend\dev.ps1 demo -Database Memory
+.\dev.cmd start -Database Memory
 ```
 
-Keep the backend terminal open. In a second terminal, run
-`.\frontend\dev.ps1 dev`. In a third, change to `ai-service` and run
-`python -m app.server --port 8090`. Open http://localhost:5173 and connect with
-the writer token printed by the backend. Use synthetic references and notes only.
+The root command starts AI, backend and frontend, waits for health and prints
+the Writer and Reviewer tokens. Open http://localhost:5173 and connect with the
+writer token. Use synthetic references and notes only. `dev.cmd stop` and
+`dev.cmd restart` manage all three processes; `status` shows the current state.
 
 For durable SQL Server storage, omit `-Database Memory` after completing
 [backend setup](../backend/scripts/README.md). The memory demo resets on restart.
@@ -50,8 +50,8 @@ Python on PATH. They start isolated H2, Python and Vite processes on ports
 results are written to ignored `test-results`. CI runs the same checks.
 
 Background start/stop, port selection, backend URL selection and token retrieval
-are documented in [server commands](../scripts/README.md). Those commands manage
-Spring Boot and Vite; start Python separately.
+are documented in [server commands](../scripts/README.md). Root commands manage
+all three services; component scripts remain available for individual development.
 
 ## Claim workflow
 

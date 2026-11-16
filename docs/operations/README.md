@@ -1,8 +1,9 @@
 # Operations
 
 See [server lifecycle commands](../../scripts/README.md) for local startup, stop,
-restart, ports, token retrieval and logs. The manager controls Spring Boot and
-Vite; Python is separate. SQL Server remains running when application processes stop.
+restart, ports, token retrieval and logs. `dev.cmd start` controls Python, Spring
+Boot and Vite, shows readiness and prints tokens. SQL Server remains running
+when application processes stop.
 
 | Component | Default address | Check |
 | --- | --- | --- |

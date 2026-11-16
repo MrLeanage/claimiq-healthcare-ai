@@ -33,8 +33,9 @@ See [AI service setup, training and limitations](ai-service/README.md).
 The [React frontend](frontend/README.md) supports claim entry, correction,
 assessment and human review. From the repository root, install frontend
 dependencies once with `.\frontend\dev.ps1 install`, then use
-`.\dev.ps1 start`, `.\dev.ps1 status`, `.\dev.ps1 tokens` and `.\dev.ps1 stop`
-to manage Spring Boot and Vite. Start Python separately as described above.
+`.\dev.cmd start` to launch Python, Spring Boot and Vite in order. It waits for
+health checks, shows service status and prints the current demo tokens. Use
+`.\dev.cmd stop`, `restart`, `status`, `logs` or `tokens` from this folder.
 
 - [Testing](docs/testing/README.md)
 - [Security boundaries](docs/security/README.md)

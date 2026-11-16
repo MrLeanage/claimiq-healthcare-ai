@@ -2,7 +2,8 @@
 
 Inside backend, use `.\dev.ps1 start`, `status`, `stop`, `restart`, `logs`, and
 `tokens` for background server management. From the solution root the same commands
-manage both servers. See [server lifecycle commands](../../scripts/README.md).
+manage all three servers. Root `dev.cmd start` also prints the demo tokens.
+See [server lifecycle commands](../../scripts/README.md).
 The existing `demo` task remains a foreground option stopped with Ctrl+C.
 
 From inside `backend`, use `.\dev.ps1 <task>`. From the repository root, use
