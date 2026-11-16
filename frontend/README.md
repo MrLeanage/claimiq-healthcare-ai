@@ -60,6 +60,12 @@ the total in integer cents; the backend verifies it independently. Optional
 clinical context is limited to 2,000 characters. Read the full
 [field contract](../docs/api/README.md) for limits and legacy claims.
 
+Required fields have a red asterisk. Create draft and Save changes stay disabled
+until required values are present across every section and billed service.
+Authorization reference becomes required when authorization is approved. Optional
+coverage dates and clinical summaries do not prevent saving; format and business
+validation still run when saving.
+
 Select **Assess denial risk** on a saved claim to see the synthetic model's
 score, findings, evidence and suggested corrections. Save a correction and assess
 again to compare manually. Results are invalidated when the loaded claim version

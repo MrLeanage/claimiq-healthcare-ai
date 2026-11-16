@@ -6,10 +6,12 @@ import {
   previewTotal,
   validateInsurance,
   parseDiagnosisCodes,
+  hasRequiredContextValues,
 } from './contextForm';
 import { ClaimContextFields } from './ClaimContextFields';
 import { ClaimContextView } from './ClaimContextView';
 import { Tabs } from '../../components/Tabs';
+import { RequiredFieldLabel } from '../../components/RequiredFieldLabel';
 interface Props {
   initial?: Claim;
   busy: boolean;
@@ -45,6 +47,9 @@ export function ClaimForm({
   const [validation, setValidation] = useState('');
   const heading = useRef<HTMLHeadingElement>(null);
   const disabled = busy || locked;
+  const requiredValuesPresent =
+    Object.values(fields).every((value) => value.trim().length > 0) &&
+    hasRequiredContextValues(context);
   const today = new Date();
   const maxDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   function change(field: keyof typeof fields, value: string) {
@@ -71,7 +76,7 @@ export function ClaimForm({
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (disabled) return;
+    if (disabled || !requiredValuesPresent) return;
     let invalidSection: Section = 'basics';
     try {
       basicValidation();
@@ -133,7 +138,8 @@ export function ClaimForm({
           </h2>
           <p className="muted small">
             Move between sections freely. Information is saved only when you
-            choose {initial ? 'Save changes' : 'Create draft'}.
+            choose {initial ? 'Save changes' : 'Create draft'}. Fields marked
+            with a red asterisk (*) are required.
           </p>
         </div>
         {validation && (
@@ -146,8 +152,9 @@ export function ClaimForm({
             <legend className="sr-only">Claim basics</legend>
             <div className="form-grid">
               <label>
-                Patient reference
+                <RequiredFieldLabel>Patient reference</RequiredFieldLabel>
                 <input
+                  aria-label="Patient reference"
                   required
                   maxLength={100}
                   value={fields.patientReference}
@@ -156,8 +163,9 @@ export function ClaimForm({
                 />
               </label>
               <label>
-                Provider reference
+                <RequiredFieldLabel>Provider reference</RequiredFieldLabel>
                 <input
+                  aria-label="Provider reference"
                   required
                   maxLength={100}
                   value={fields.providerReference}
@@ -166,7 +174,7 @@ export function ClaimForm({
                 />
               </label>
               <label>
-                Currency
+                <RequiredFieldLabel>Currency</RequiredFieldLabel>
                 <input
                   aria-label="Currency"
                   required
@@ -179,8 +187,9 @@ export function ClaimForm({
                 />
               </label>
               <label>
-                Service date
+                <RequiredFieldLabel>Service date</RequiredFieldLabel>
                 <input
+                  aria-label="Service date"
                   type="date"
                   required
                   max={maxDate}
@@ -258,7 +267,11 @@ export function ClaimForm({
         )}
       </div>
       <div className="form-actions">
-        <span className="small muted">Unsaved changes stay in this popup.</span>
+        <span className="small muted" id="draft-save-help">
+          {requiredValuesPresent
+            ? 'Unsaved changes stay in this popup.'
+            : 'Complete required fields in all sections to save the draft.'}
+        </span>
         <div className="button-row">
           <button
             type="button"
@@ -268,7 +281,11 @@ export function ClaimForm({
           >
             Cancel
           </button>
-          <button className="button primary" disabled={disabled}>
+          <button
+            className="button primary"
+            disabled={disabled || !requiredValuesPresent}
+            aria-describedby="draft-save-help"
+          >
             {busy ? 'Saving...' : initial ? 'Save changes' : 'Create draft'}
           </button>
         </div>
