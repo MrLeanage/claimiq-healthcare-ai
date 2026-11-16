@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ClaimMapper {
+    // Convert transport DTOs into domain value objects; updateDetails validates before mutation.
     public void apply(ClaimRequest r, Claim c) {
         c.updateDetails(
                 r.patientReference(),

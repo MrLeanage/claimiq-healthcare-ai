@@ -1115,6 +1115,14 @@ td {
   margin: 25px 0 0;
   min-width: 0;
 }
+
+.claim-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+  margin-left: 10px;
+}
+
 .claim-section > legend {
   color: var(--color-primary);
   font-family: var(--font-heading);

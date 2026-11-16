@@ -8,6 +8,9 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+// Bean Validation checks the HTTP contract; domain constructors enforce business invariants too.
+// Context is optional for backend drafts even though the current frontend collects it before
+// saving.
 public record ClaimRequest(
         @NotBlank @Size(max = 100) @Schema(example = "PAT-DEMO") String patientReference,
         @NotBlank @Size(max = 100) @Schema(example = "PROV-DEMO") String providerReference,

@@ -19,6 +19,8 @@ public class ClaimRequestFingerprint {
         this.json = json;
     }
 
+    // Hash the mapped JSON for same-key payload comparison, not authentication or encryption.
+    // Numeric scale/serialization differences may count as a changed payload.
     public String of(ClaimRequest request) {
         try {
             byte[] digest =

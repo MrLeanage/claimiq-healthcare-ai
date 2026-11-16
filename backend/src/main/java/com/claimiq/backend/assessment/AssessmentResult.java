@@ -14,6 +14,8 @@ public record AssessmentResult(
         Double interceptLogOdds,
         List<Finding> findings,
         List<String> limitations) {
+    // Wrapper Doubles distinguish missing JSON values from a real zero score/contribution.
+    // Constructor invariants reject malformed upstream data before it reaches React.
     public AssessmentResult {
         requireText(modelVersion);
         if (!"SYNTHETIC".equals(trainingData)

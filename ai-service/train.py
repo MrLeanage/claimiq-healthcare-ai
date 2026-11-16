@@ -6,6 +6,7 @@ from app.ml.model import FEATURES, MODEL_PATH, probability, sigmoid
 
 
 def train():
+    # Fixed seed makes generated data and the resulting artifact reproducible.
     rng = random.Random(2718)
     # Invented data-generating assumptions, NOT evidence about payer behavior.
     assumptions = [3.1, 1.4, 0.8, 3.0, 1.8, 1.1, 0.7, 0.5]
@@ -27,6 +28,7 @@ def train():
             rng.random() < sigmoid(-3.2 + sum(a * b for a, b in zip(assumptions, x)))
         )
         rows.append((x, y))
+    # Hold out 20% of synthetic rows; no real-world generalization follows from this split.
     training, held_out = rows[:3200], rows[3200:]
     model = dict(
         features=list(FEATURES),
@@ -41,12 +43,16 @@ def train():
         generatorIntercept=-3.2,
         generatorWeights=assumptions,
     )
+    # Full-batch gradient descent: step size 0.5; L2 strength 0.001 applies to weights only.
+    # The intercept is updated separately and is not penalized.
     for _ in range(700):
         errors = [(x, probability(model, x) - y) for x, y in training]
         model["intercept"] -= 0.5 * sum(e for _, e in errors) / len(training)
         for j in range(len(FEATURES)):
             gradient = sum(e * x[j] for x, e in errors) / len(training)
             model["weights"][j] -= 0.5 * (gradient + 0.001 * model["weights"][j])
+    # Accuracy uses a 0.5 threshold; Brier score averages squared probability errors.
+    # These evaluate fit to the invented generator, not effectiveness on actual payer claims.
     model["syntheticTestMetrics"] = {
         "accuracyAtThreshold05": sum(
             (probability(model, x) >= 0.5) == bool(y) for x, y in held_out

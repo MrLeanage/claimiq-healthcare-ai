@@ -24,6 +24,11 @@ does not create duplicates; repeated `stop` is safe. SQL records survive restart
 Demo tokens expire after one hour and rotate on every backend restart. Reconnect
 the frontend using the fresh `tokens` output after restarting the backend.
 
+When the backend is healthy, root startup/status output also prints its Swagger
+URL, for example `http://localhost:8081/swagger-ui/index.html`. The link follows
+the actual backend port, including a custom `-BackendPort`. Backend-only commands
+and token retrieval also print the link; a stopped/unhealthy backend does not.
+
 Use `-Service ai`, `backend` or `frontend` to manage just one server:
 
 ```powershell

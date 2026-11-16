@@ -5,6 +5,7 @@ import { ClaimsWorkspace } from '../features/claims/ClaimsWorkspace';
 import { HttpClaimsGateway } from '../services/claimsApi';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useDraftGuard } from './draftGuardContext';
+// Application shell: session state decides between Connect and the routed workspace.
 export function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,12 +25,14 @@ export function App() {
     });
   }
   const [expired, setExpired] = useState(false);
+  // Reuse the API client for this session; a new token creates a new client.
   const api = useMemo(
     () => (session ? new HttpClaimsGateway(session.token) : null),
     [session],
   );
   useEffect(() => {
     if (!session) return;
+    // Local expiry handling improves UX; the backend still validates each token.
     const check = () => {
       if (Date.now() >= session.expiresAt) {
         markDirty(false);

@@ -10,6 +10,7 @@ from app.services.assessment import assess
 
 
 class Handler(BaseHTTPRequestHandler):
+    # Validate/load once at startup. Replacing the artifact requires a server restart.
     model = load_model()
 
     def log_message(self, *_):
@@ -38,6 +39,7 @@ class Handler(BaseHTTPRequestHandler):
         if key and not compare_digest(self.headers.get("X-AI-Key", ""), key):
             return self.reply(401, {"message": "Unauthorized"})
         try:
+            # Java may stream chunked JSON. Both body paths enforce a 64 KiB limit.
             if self.headers.get("Transfer-Encoding", "").lower() == "chunked":
                 body = bytearray()
                 while True:
@@ -57,6 +59,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not 0 < length <= 65536:
                     return self.reply(413, {"message": "Invalid body size"})
                 body = self.rfile.read(length)
+            # Transport bytes -> Python data -> shared assessment logic -> JSON response.
             payload = json.loads(body)
             self.reply(200, assess(payload, self.model))
         except (ValueError, TypeError, KeyError):

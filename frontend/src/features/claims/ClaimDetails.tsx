@@ -34,6 +34,7 @@ export function ClaimDetails({
   >(null);
   const [notice, setNotice] = useState(initialNotice);
   const claim = current.claim;
+  // Shared mutation handling retains the returned ETag; 412 requires an explicit reload.
   async function execute(
     operation: () => Promise<VersionedClaim>,
     success: string,
@@ -67,6 +68,7 @@ export function ClaimDetails({
       setBusy(false);
     }
   }
+  // UI permissions hide unavailable actions; backend checks enforce actual access.
   const writeEnabled = canWrite && claim.status === 'DRAFT';
   return (
     <section className="panel detail-panel" aria-labelledby="claim-title">

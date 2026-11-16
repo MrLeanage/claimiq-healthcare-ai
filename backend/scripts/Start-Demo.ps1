@@ -34,6 +34,7 @@ function ConvertTo-Base64Url([byte[]] $Bytes) {
 function New-DemoToken([string] $Subject, [string] $Scopes) {
     $now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
     $header = ConvertTo-Base64Url ([Text.Encoding]::UTF8.GetBytes('{"alg":"HS256","typ":"JWT"}'))
+    # JWT timestamps are Unix seconds. 3600 gives one hour; restarting rotates the demo key.
     $payload = @{ sub=$Subject; scope=$Scopes; iss='claimiq-demo'; aud='claimiq-api'; iat=$now; exp=($now+3600) } | ConvertTo-Json -Compress
     $body = "$header.$(ConvertTo-Base64Url ([Text.Encoding]::UTF8.GetBytes($payload)))"
     $hmac = New-Object System.Security.Cryptography.HMACSHA256

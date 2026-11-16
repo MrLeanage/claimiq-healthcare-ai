@@ -5,6 +5,7 @@ import com.claimiq.backend.claims.exception.VersionPreconditionRequiredException
 final class VersionPrecondition {
     private VersionPrecondition() {}
 
+    // Accept one quoted version, not a wildcard/list/weak tag, for optimistic concurrency.
     static long parse(String header) {
         if (header == null || header.isBlank()) throw new VersionPreconditionRequiredException();
         if (!header.matches("\"[0-9]+\""))

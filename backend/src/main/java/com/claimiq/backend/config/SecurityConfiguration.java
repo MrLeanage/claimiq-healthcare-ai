@@ -15,6 +15,7 @@ public class SecurityConfiguration {
     JwtDecoder claimJwtDecoder(
             @Value("${claimiq.security.issuer-uri:}") String issuer,
             @Value("${claimiq.security.audience:}") String audience) {
+        // Fail closed when identity settings are absent; do not silently accept arbitrary tokens.
         if (issuer.isBlank() || audience.isBlank()) {
             return token -> {
                 throw new BadJwtException(
@@ -31,8 +32,13 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    SecurityFilterChain claimSecurity(HttpSecurity http, JwtDecoder decoder,
-            org.springframework.core.env.Environment environment) throws Exception {
+    SecurityFilterChain claimSecurity(
+            HttpSecurity http,
+            JwtDecoder decoder,
+            org.springframework.core.env.Environment environment)
+            throws Exception {
+        // Bearer-header authentication is stateless, not a cookie-based login session.
+        // Scope and ownership authorization are enforced by ClaimAccessPolicy in the services.
         return http.csrf(csrf -> csrf.disable())
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -40,9 +46,14 @@ public class SecurityConfiguration {
                         requests -> {
                             requests.requestMatchers("/actuator/health").permitAll();
                             if (environment.acceptsProfiles(
-                                    org.springframework.core.env.Profiles.of("local", "demo", "docs"))) {
-                                requests.requestMatchers("/api-docs", "/api-docs/**",
-                                        "/swagger-ui.html", "/swagger-ui/**").permitAll();
+                                    org.springframework.core.env.Profiles.of(
+                                            "local", "demo", "docs"))) {
+                                requests.requestMatchers(
+                                                "/api-docs",
+                                                "/api-docs/**",
+                                                "/swagger-ui.html",
+                                                "/swagger-ui/**")
+                                        .permitAll();
                             }
                             requests.anyRequest().authenticated();
                         })

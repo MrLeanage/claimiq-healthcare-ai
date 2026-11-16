@@ -5,6 +5,7 @@ export interface Session {
   readonly expiresAt: number;
 }
 // Decoded claims are display hints only. The backend verifies the signature and permissions.
+// Decode display claims only; signature verification belongs to Spring Security.
 export function parseSession(token: string): Session {
   try {
     const parts = token.trim().split('.');

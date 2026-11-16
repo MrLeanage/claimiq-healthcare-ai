@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 
 MODEL_PATH = Path(__file__).with_name("synthetic-model.json")
+# This ordering is the feature/weight contract shared by training and inference.
 FEATURES = (
     "coverage_inactive",
     "coverage_unknown",
@@ -17,10 +18,12 @@ FEATURES = (
 )
 
 
+# Clamp extreme logits to avoid exponential overflow; the result stays between 0 and 1.
 def sigmoid(value):
     return 1 / (1 + math.exp(-max(-40, min(40, value))))
 
 
+# JSON stores parameters/metadata; Python code performs the scoring calculation.
 def load_model():
     model = json.loads(MODEL_PATH.read_text(encoding="utf-8"))
     validate_model(model)
@@ -50,6 +53,8 @@ def _finite_number(value):
         return False
 
 
+# z = intercept + weighted binary features; sigmoid(z) is a synthetic-trained probability.
+# It has not been calibrated or validated against actual denial outcomes.
 def probability(model, features):
     validate_model(model)
     if len(features) != len(FEATURES) or any(

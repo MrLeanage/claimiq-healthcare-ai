@@ -7,6 +7,7 @@ interface Props {
   maxDate: string;
   section?: 'all' | 'insurance' | 'clinical' | 'services';
 }
+// Props provide current values; onChange sends new copies back to the parent form.
 export function ClaimContextFields({
   value,
   disabled,
@@ -72,7 +73,7 @@ export function ClaimContextFields({
               />
             </label>
             <label>
-              <RequiredFieldLabel>Reported coverage status</RequiredFieldLabel>
+              <RequiredFieldLabel>Reported coverage status:</RequiredFieldLabel>
               <select
                 required
                 aria-label="Reported coverage status"
@@ -90,8 +91,9 @@ export function ClaimContextFields({
               </select>
             </label>
             <label>
-              Coverage check date (optional)
+              Coverage check date (optional):
               <input
+                aria-label="Coverage check date (optional)"
                 type="date"
                 max={maxDate}
                 value={value.coverageVerifiedOn}
@@ -99,7 +101,7 @@ export function ClaimContextFields({
               />
             </label>
             <label>
-              <RequiredFieldLabel>Authorization status</RequiredFieldLabel>
+              <RequiredFieldLabel>Authorization status:</RequiredFieldLabel>
               <select
                 required
                 aria-label="Authorization status"
@@ -180,7 +182,7 @@ export function ClaimContextFields({
               <div className="form-grid">
                 <label>
                   <RequiredFieldLabel>
-                    Code system {index + 1}
+                    Code system {index + 1}:
                   </RequiredFieldLabel>
                   <select
                     required
@@ -289,7 +291,7 @@ export function ClaimContextFields({
         <fieldset className="claim-section" disabled={disabled}>
           <legend>Supporting context</legend>
           <label>
-            Clinical summary (optional)
+            Clinical summary (optional):
             <textarea
               rows={4}
               maxLength={2000}

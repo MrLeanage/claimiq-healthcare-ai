@@ -55,10 +55,12 @@ export interface ClaimPage {
   number: number;
   size: number;
 }
+// Keep the server's ETag intact; writes send it back through If-Match.
 export interface VersionedClaim {
   claim: Claim;
   etag: string;
 }
+// UI-facing contract: components can use HTTP or a test double without changing UI logic.
 export interface ClaimsGateway {
   assess?(
     id: string,

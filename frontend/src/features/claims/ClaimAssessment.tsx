@@ -20,9 +20,11 @@ export function ClaimAssessment({
     () => () => pending.current?.abort(),
     [current.claim.id, current.claim.version],
   );
+  // An explanation is relevant only to the exact saved claim version that was assessed.
   const valid =
     result?.claimId === current.claim.id &&
     result.claimVersion === current.claim.version;
+  // UI -> gateway -> Java assessment coordinator -> Python; no browser-to-Python call.
   async function run() {
     if (!api.assess) return;
     pending.current?.abort();
@@ -47,7 +49,9 @@ export function ClaimAssessment({
   if (!api.assess) return null;
   return (
     <section aria-labelledby="assessment-title" className="claim-section">
-      <h3 id="assessment-title">Pre-submission risk assessment</h3>
+      <h3 className="claim-section-title" id="assessment-title">
+        Pre-submission risk assessment
+      </h3>
       <p className="notice">
         Synthetic demonstration. Scores are not validated payer denial
         probabilities. Human review is required.
