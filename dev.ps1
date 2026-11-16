@@ -14,7 +14,7 @@ param(
 $ErrorActionPreference='Stop'
 if($Task -eq 'help') {
     'ClaimIQ: .\dev.cmd start | stop | restart | status | logs | tokens'
-    'Starts AI, backend, then frontend; prints status and current demo tokens.'
+    'Starts AI, backend, then frontend; prints status, Swagger URL and current demo tokens.'
     'Defaults: AI 8090, backend 8081 (SQL Server), frontend 5173.'
     'Use -Service ai|backend|frontend to manage one component.'
     'Options: -AiPort -BackendPort -FrontendPort -PythonExe -JavaHome -AuthLibraryPath -StartupTimeoutSeconds -Database SqlServer|Memory'
@@ -51,9 +51,16 @@ function Invoke-Component([string]$Name,[string]$Action) {
     }
     & $manager @options
 }
+function Show-Swagger($Backend) {
+    if(!$Backend){$Backend=Invoke-Component 'backend' 'status'}
+    if($Backend.Status -eq 'running') {
+        Write-Host "Swagger: http://localhost:$($Backend.Port)/swagger-ui/index.html"
+    }
+}
 function Show-Status {
     $rows=foreach($name in $order){Invoke-Component $name 'status'}
     $rows | Format-Table Component,Status,Port,PID,Managed,URL -AutoSize | Out-Host
+    Show-Swagger ($rows | Where-Object Component -eq 'backend')
 }
 function Show-Tokens {
     try { Invoke-Component 'backend' 'tokens' }
@@ -107,9 +114,10 @@ $locked=$false
 try {
     try {$locked=$mutex.WaitOne(1000)} catch [Threading.AbandonedMutexException] {$locked=$true}
     if(!$locked){throw 'Another root command is managing the stack. Retry when it finishes.'}
-    if($Task -eq 'tokens'){Invoke-Component 'backend' 'tokens';return}
+    if($Task -eq 'tokens'){Invoke-Component 'backend' 'tokens';Show-Swagger;return}
     if($Service -ne 'all') {
         Invoke-Component $Service $Task
+        if($Service -eq 'backend' -and $Task -in @('start','restart','status','tokens')){Show-Swagger}
         if($Service -eq 'backend' -and $Task -in @('start','restart')){Show-Tokens}
         return
     }
