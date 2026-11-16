@@ -11,7 +11,7 @@ async function connect(page: Page, subject: string, scope: string) {
     page.getByRole('heading', { name: 'Claims workspace.' }),
   ).toBeVisible();
 }
-test('writer creates and edits, submits; reviewer approves through the real API', async ({
+test('writer retries a lost creation response, edits and submits; reviewer approves through the real API', async ({
   page,
 }) => {
   await page.goto('/');
@@ -45,8 +45,28 @@ test('writer creates and edits, submits; reviewer approves through the real API'
     .getByLabel('Service description 1', { exact: true })
     .fill('Synthetic consultation');
 
+  const creationKeys: string[] = [];
+  let committedId = '';
+  await page.route('**/api/v1/claims', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    creationKeys.push(route.request().headers()['idempotency-key']);
+    if (creationKeys.length === 1) {
+      const response = await route.fetch();
+      expect(response.status()).toBe(201);
+      committedId = ((await response.json()) as { id: string }).id;
+      return route.abort('failed');
+    }
+    return route.continue();
+  });
+  await page.getByRole('button', { name: 'Create draft', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Cannot reach ClaimIQ');
   await page.getByRole('button', { name: 'Create draft', exact: true }).click();
   await expect(page.getByRole('heading', { name: /CLM-/ })).toBeVisible();
+  expect(creationKeys).toHaveLength(2);
+  expect(creationKeys[0]).toMatch(/^[0-9a-f-]{36}$/);
+  expect(creationKeys[1]).toBe(creationKeys[0]);
+  await expect(page).toHaveURL(new RegExp(`/claims/${committedId}`));
+  await page.unroute('**/api/v1/claims');
   await page.getByRole('button', { name: 'Assess denial risk' }).click();
   await expect(
     page.getByRole('region', { name: 'Pre-submission risk assessment' }),

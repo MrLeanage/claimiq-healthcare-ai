@@ -43,6 +43,7 @@ class ClaimSqlServerIT {
     private static String password;
     private static boolean created;
     @Autowired ClaimService service;
+    @Autowired com.claimiq.backend.claims.service.ClaimCreationService creation;
     @Autowired ClaimAuditRepository audit;
     @Autowired EntityManagerFactory entityManagers;
     @Autowired org.springframework.transaction.PlatformTransactionManager transactionManager;
@@ -105,6 +106,19 @@ VALUES ('11111111-1111-1111-1111-111111111111', 'CLM-LEGACY', 'PAT-DEMO',
     @AfterEach
     void clearAuthentication() {
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void creationRetriesUseTheSqlServerUniqueReservationAndOneAuditEvent() {
+        UUID key = UUID.randomUUID();
+        var first = creation.create(request("125.00"), key);
+        var replay = creation.create(request("125.00"), key);
+        assertEquals(first.id(), replay.id());
+        assertEquals(first.version(), replay.version());
+        assertEquals(1, audit.findAllByClaimIdOrderByOccurredAtAsc(first.id()).size());
+        assertThrows(
+                com.claimiq.backend.claims.exception.IdempotencyConflictException.class,
+                () -> creation.create(request("150.00"), key));
     }
 
     @Test
@@ -296,7 +310,8 @@ VALUES ('11111111-1111-1111-1111-111111111111', 'CLM-LEGACY', 'PAT-DEMO',
     }
 
     @AfterAll
-    static void dropDisposableDatabase(@Autowired javax.sql.DataSource dataSource) throws Exception {
+    static void dropDisposableDatabase(@Autowired javax.sql.DataSource dataSource)
+            throws Exception {
         if (created) {
             if (!DATABASE.matches("ClaimIQ_it_[0-9a-f]{32}"))
                 throw new IllegalStateException("Unsafe cleanup target");

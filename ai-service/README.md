@@ -82,3 +82,12 @@ panel invalidates results when the claim version changes. No duplicate detection
 timely-filing checks, payer-policy retrieval, code compatibility or historical
 outcome analysis is implemented. Existing claim lifecycle and validation remain
 independent of this advisory feature.
+
+## Model artifact validation
+
+Startup rejects artifacts with a mismatched feature order, a non-synthetic marker,
+missing version, missing/extra weights, or non-finite/non-numeric parameters.
+Inference checks exactly eight binary features and uses strict vector pairing;
+invalid dimensions cannot silently produce an intercept-only score. Unit tests
+cover corrupted artifacts as well as the normal score/explanation contract.
+This validation does not establish predictive quality on real claim outcomes.

@@ -37,11 +37,15 @@ export class HttpClaimsGateway implements ClaimsGateway {
     method: string,
     body?: unknown,
     etag?: string,
+    idempotencyKey?: string,
   ): Promise<VersionedClaim> {
     return this.readVersioned(
       await request(this.fetcher, this.token, path, {
         method,
-        headers: etag ? { 'If-Match': etag } : {},
+        headers: {
+          ...(etag ? { 'If-Match': etag } : {}),
+          ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
+        },
         body: body === undefined ? undefined : JSON.stringify(body),
       }),
     );
@@ -62,8 +66,8 @@ export class HttpClaimsGateway implements ClaimsGateway {
       ),
     );
   }
-  create(input: ClaimInput) {
-    return this.write(base, 'POST', input);
+  create(input: ClaimInput, idempotencyKey?: string) {
+    return this.write(base, 'POST', input, undefined, idempotencyKey);
   }
   update(id: string, input: ClaimInput, etag: string) {
     return this.write(`${base}/${encodeURIComponent(id)}`, 'PUT', input, etag);
