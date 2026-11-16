@@ -32,6 +32,32 @@ export const newLine = (): LineFields => ({
   units: '1',
   unitPrice: '',
 });
+export function hasRequiredContextValues(fields: ContextFields): boolean {
+  const required = [
+    fields.payerName,
+    fields.planReference,
+    fields.memberReference,
+    fields.coverageStatus,
+    fields.authorizationStatus,
+    fields.diagnoses,
+  ];
+  if (fields.authorizationStatus === 'APPROVED') {
+    required.push(fields.authorizationReference);
+  }
+  return (
+    required.every((value) => value.trim().length > 0) &&
+    fields.lines.length > 0 &&
+    fields.lines.every((line) =>
+      [
+        line.codeSystem,
+        line.procedureCode,
+        line.description,
+        line.units,
+        line.unitPrice,
+      ].every((value) => value.trim().length > 0),
+    )
+  );
+}
 export function initialContext(claim?: Claim): ContextFields {
   const context = claim?.context;
   return {

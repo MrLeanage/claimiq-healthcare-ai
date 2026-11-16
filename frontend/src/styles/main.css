@@ -661,6 +661,9 @@ label small {
   font-size: 10px;
   color: var(--color-muted);
 }
+.required-marker {
+  color: var(--color-required);
+}
 input,
 textarea {
   width: 100%;

@@ -1,3 +1,4 @@
+import { RequiredFieldLabel } from '../../components/RequiredFieldLabel';
 import { newLine, type ContextFields, type LineFields } from './contextForm';
 interface Props {
   value: ContextFields;
@@ -38,8 +39,9 @@ export function ClaimContextFields({
           </p>
           <div className="form-grid">
             <label>
-              Payer name
+              <RequiredFieldLabel>Payer name</RequiredFieldLabel>
               <input
+                aria-label="Payer name"
                 required
                 maxLength={150}
                 value={value.payerName}
@@ -48,8 +50,9 @@ export function ClaimContextFields({
               />
             </label>
             <label>
-              Plan reference
+              <RequiredFieldLabel>Plan reference</RequiredFieldLabel>
               <input
+                aria-label="Plan reference"
                 required
                 maxLength={100}
                 value={value.planReference}
@@ -58,8 +61,9 @@ export function ClaimContextFields({
               />
             </label>
             <label>
-              Member reference
+              <RequiredFieldLabel>Member reference</RequiredFieldLabel>
               <input
+                aria-label="Member reference"
                 required
                 maxLength={100}
                 value={value.memberReference}
@@ -68,8 +72,9 @@ export function ClaimContextFields({
               />
             </label>
             <label>
-              Reported coverage status
+              <RequiredFieldLabel>Reported coverage status</RequiredFieldLabel>
               <select
+                required
                 aria-label="Reported coverage status"
                 value={value.coverageStatus}
                 onChange={(e) =>
@@ -94,8 +99,9 @@ export function ClaimContextFields({
               />
             </label>
             <label>
-              Authorization status
+              <RequiredFieldLabel>Authorization status</RequiredFieldLabel>
               <select
+                required
                 aria-label="Authorization status"
                 value={value.authorizationStatus}
                 onChange={(e) =>
@@ -119,8 +125,13 @@ export function ClaimContextFields({
               </select>
             </label>
             <label>
-              Authorization reference
+              <RequiredFieldLabel
+                required={value.authorizationStatus === 'APPROVED'}
+              >
+                Authorization reference
+              </RequiredFieldLabel>
               <input
+                aria-label="Authorization reference"
                 required={value.authorizationStatus === 'APPROVED'}
                 maxLength={100}
                 value={value.authorizationReference}
@@ -137,7 +148,7 @@ export function ClaimContextFields({
         <fieldset className="claim-section" disabled={disabled}>
           <legend>Diagnosis information</legend>
           <label>
-            Diagnosis codes
+            <RequiredFieldLabel>Diagnosis codes</RequiredFieldLabel>
             <input
               required
               maxLength={420}
@@ -168,8 +179,11 @@ export function ClaimContextFields({
               <legend>Service {index + 1}</legend>
               <div className="form-grid">
                 <label>
-                  Code system {index + 1}
+                  <RequiredFieldLabel>
+                    Code system {index + 1}
+                  </RequiredFieldLabel>
                   <select
+                    required
                     aria-label={`Code system ${index + 1}`}
                     value={line.codeSystem}
                     onChange={(e) =>
@@ -184,8 +198,11 @@ export function ClaimContextFields({
                   </select>
                 </label>
                 <label>
-                  Procedure code {index + 1}
+                  <RequiredFieldLabel>
+                    Procedure code {index + 1}
+                  </RequiredFieldLabel>
                   <input
+                    aria-label={`Procedure code ${index + 1}`}
                     required
                     maxLength={20}
                     value={line.procedureCode}
@@ -198,8 +215,11 @@ export function ClaimContextFields({
                   />
                 </label>
                 <label className="span-two">
-                  Service description {index + 1}
+                  <RequiredFieldLabel>
+                    Service description {index + 1}
+                  </RequiredFieldLabel>
                   <input
+                    aria-label={`Service description ${index + 1}`}
                     required
                     maxLength={200}
                     value={line.description}
@@ -210,8 +230,9 @@ export function ClaimContextFields({
                   />
                 </label>
                 <label>
-                  Units {index + 1}
+                  <RequiredFieldLabel>Units {index + 1}</RequiredFieldLabel>
                   <input
+                    aria-label={`Units ${index + 1}`}
                     type="number"
                     required
                     min={1}
@@ -224,8 +245,11 @@ export function ClaimContextFields({
                   />
                 </label>
                 <label>
-                  Unit price {index + 1}
+                  <RequiredFieldLabel>
+                    Unit price {index + 1}
+                  </RequiredFieldLabel>
                   <input
+                    aria-label={`Unit price ${index + 1}`}
                     required
                     inputMode="decimal"
                     value={line.unitPrice}

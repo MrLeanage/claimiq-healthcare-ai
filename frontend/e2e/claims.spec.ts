@@ -17,6 +17,18 @@ test('writer retries a lost creation response, edits and submits; reviewer appro
   await page.goto('/');
   await connect(page, 'demo-writer', 'claims:read claims:write');
   await page.getByRole('button', { name: 'New claim' }).click();
+  await expect(
+    page.getByRole('button', { name: 'Create draft', exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.getByLabel('Patient reference', { exact: true }),
+  ).toHaveAttribute('required', '');
+  await expect(
+    page.getByRole('dialog').getByText('*', { exact: true }).first(),
+  ).toHaveCSS('color', 'rgb(180, 35, 24)');
+  await page
+    .getByRole('dialog')
+    .screenshot({ path: 'test-results/claim-required-fields.png' });
   await page.getByLabel('Patient reference', { exact: true }).fill('PAT-E2E');
   await page.getByLabel('Provider reference', { exact: true }).fill('PROV-E2E');
   await page.getByLabel('Service date', { exact: true }).fill('2026-01-01');
@@ -79,6 +91,14 @@ test('writer retries a lost creation response, edits and submits; reviewer appro
     page.getByRole('region', { name: 'Assessment information' }),
   ).toContainText('PLAN-E2E');
   await page.getByRole('button', { name: 'Edit draft' }).click();
+  await page.getByLabel('Patient reference', { exact: true }).clear();
+  await expect(
+    page.getByRole('button', { name: 'Save changes', exact: true }),
+  ).toBeDisabled();
+  await page.getByLabel('Patient reference', { exact: true }).fill('PAT-E2E');
+  await expect(
+    page.getByRole('button', { name: 'Save changes', exact: true }),
+  ).toBeEnabled();
   await page
     .getByRole('dialog')
     .getByRole('tab', { name: 'Billed services', exact: true })
