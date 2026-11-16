@@ -10,6 +10,7 @@ import '@fontsource/open-sans/400.css';
 import '@fontsource/open-sans/600.css';
 import '@fontsource/open-sans/700.css';
 import './styles/main.css';
+// Entry point: the HTML root hosts React; routing wraps App and the unsaved-draft guard.
 const router = createBrowserRouter([
   {
     path: '*',
@@ -20,6 +21,7 @@ const router = createBrowserRouter([
     ),
   },
 ]);
+// JSX describes components; React renders them into the existing DOM container.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <RouterProvider router={router} />

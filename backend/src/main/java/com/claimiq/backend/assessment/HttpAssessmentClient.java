@@ -28,6 +28,7 @@ public class HttpAssessmentClient implements AssessmentClient {
     public HttpAssessmentClient(
             @Value("${claimiq.ai.base-url:http://127.0.0.1:8090}") String baseUrl,
             @Value("${claimiq.ai.api-key:}") String apiKey) {
+        // Two seconds to connect and five for the request keep dependency waits bounded.
         var factory =
                 new JdkClientHttpRequestFactory(
                         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build());
@@ -43,6 +44,8 @@ public class HttpAssessmentClient implements AssessmentClient {
     @Override
     public AssessmentResult assess(ClaimContextDto context) {
         try {
+            // Serialize indicators as JSON; the result record validates the response on
+            // deserialization.
             AssessmentResult result =
                     client.post()
                             .uri("/assess")
@@ -77,6 +80,8 @@ public class HttpAssessmentClient implements AssessmentClient {
                 "Assessment unavailable. Retry or contact support with reference " + reference);
     }
 
+    // Presence markers replace identifiers/text; statuses, date and code systems remain.
+    // These inputs support the eight-feature model, not clinical/coding interpretation.
     private Map<String, Object> indicators(ClaimContextDto context) {
         var insurance = context.insurance();
         return Map.of(

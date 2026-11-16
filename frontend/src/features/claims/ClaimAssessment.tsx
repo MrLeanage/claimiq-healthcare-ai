@@ -20,9 +20,11 @@ export function ClaimAssessment({
     () => () => pending.current?.abort(),
     [current.claim.id, current.claim.version],
   );
+  // An explanation is relevant only to the exact saved claim version that was assessed.
   const valid =
     result?.claimId === current.claim.id &&
     result.claimVersion === current.claim.version;
+  // UI -> gateway -> Java assessment coordinator -> Python; no browser-to-Python call.
   async function run() {
     if (!api.assess) return;
     pending.current?.abort();

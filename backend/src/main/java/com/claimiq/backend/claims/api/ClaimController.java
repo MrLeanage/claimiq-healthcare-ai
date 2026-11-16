@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.UUID;
 
+// HTTP boundary: bind JSON/headers to use cases; business invariants stay in services/domain.
 @RestController
 @RequestMapping("/api/v1/claims")
 public class ClaimController {
@@ -51,6 +52,7 @@ public class ClaimController {
 
     @Operation(summary = "List visible claims (claims:read)")
     @GetMapping
+    // Stable sorting plus bounded pages; the DTO omits clinical context from list results.
     public Page<ClaimSummary> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {

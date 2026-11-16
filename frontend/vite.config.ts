@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
       host: '127.0.0.1',
       port: 5173,
       strictPort: true,
+      // Development-only forwarding: browser /api requests reach Spring Boot on 8081.
       proxy: {
         '/api': {
           target: env.BACKEND_URL || 'http://127.0.0.1:8081',

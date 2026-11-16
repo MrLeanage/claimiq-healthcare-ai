@@ -53,6 +53,7 @@ function Get-Worker {
         (Contains-Path $worker.CommandLine $runner) -and (Contains-Path $worker.CommandLine $state.configFile)){return $worker}
     return $null
 }
+# Readiness probes verify HTTP responses, not just whether a process owns the port.
 function Test-Ready {
     $urls=if($Component -eq 'backend'){@("http://127.0.0.1:$Port/actuator/health")}elseif($Component -eq 'ai'){@("http://127.0.0.1:$Port/health")}else{@("http://127.0.0.1:$Port/","http://[::1]:$Port/")}
     foreach($url in $urls) {

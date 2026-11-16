@@ -44,6 +44,7 @@ public class DefaultClaimCreationService implements ClaimCreationService {
 
     @Override
     public ClaimResponse create(ClaimRequest input, UUID key) {
+        // Scope keys by authenticated subject; another user's key cannot replay their claim.
         access.requireCreate();
         if (key == null) return claims.create(input);
         String subject = access.subject();
@@ -55,6 +56,8 @@ public class DefaultClaimCreationService implements ClaimCreationService {
                         if (existing.isPresent()) return replay(existing.get(), hash);
                         var reservation =
                                 requests.saveAndFlush(new ClaimCreationRequest(subject, key, hash));
+                        // ClaimService joins this transaction; rollback removes reservation and
+                        // claim together.
                         ClaimResponse result = claims.create(input);
                         reservation.complete(result.id());
                         return result;

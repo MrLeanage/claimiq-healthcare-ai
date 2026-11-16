@@ -71,6 +71,7 @@ public class Claim {
     @org.hibernate.annotations.BatchSize(size = 50)
     private List<ClaimServiceLine> serviceLines = new ArrayList<>();
 
+    // JPA optimistic locking catches concurrent writes; the API exposes this value as an ETag.
     @Version private long version;
 
     public void assignOwner(String subject) {
@@ -219,6 +220,7 @@ public class Claim {
         return status;
     }
 
+    // Submission validates the saved draft and locks it against further draft editing.
     public void submit() {
         requireDraft("Only draft claims can be submitted");
         requireReference(claimNumber, 40, "claimNumber");
@@ -230,12 +232,13 @@ public class Claim {
         if (getContext() == null)
             throw new IllegalArgumentException(
                     "Complete insurance, diagnosis and billed service information before"
-                        + " submission");
+                            + " submission");
         getContext().requireMatchingAmount(amount);
         status = ClaimStatus.SUBMITTED;
         submittedAt = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
     }
 
+    // Only the allowed state graph can change status; the AI never chooses these transitions.
     public void transitionTo(ClaimStatus target) {
         boolean valid =
                 (status == ClaimStatus.SUBMITTED && target == ClaimStatus.UNDER_REVIEW)

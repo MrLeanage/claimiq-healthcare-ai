@@ -32,6 +32,7 @@ export const newLine = (): LineFields => ({
   units: '1',
   unitPrice: '',
 });
+// Presence controls save availability, including conditional authorization fields.
 export function hasRequiredContextValues(fields: ContextFields): boolean {
   const required = [
     fields.payerName,
@@ -78,6 +79,7 @@ export function initialContext(claim?: Claim): ContextFields {
     })) ?? [{ ...newLine(), unitPrice: claim?.amount.toFixed(2) ?? '' }],
   };
 }
+// Integer cents avoid binary floating-point rounding during money calculations.
 function cents(price: string): number {
   if (!/^\d+(\.\d{1,2})?$/.test(price))
     throw new Error(
@@ -139,6 +141,7 @@ export function parseDiagnosisCodes(value: string): string[] {
     );
   return codes;
 }
+// Convert editable strings into the typed API payload and derive its total.
 export function buildContext(fields: ContextFields): {
   context: ClaimContext;
   amount: number;

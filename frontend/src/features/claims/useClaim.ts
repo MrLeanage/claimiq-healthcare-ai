@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ClaimsGateway, VersionedClaim } from './model';
 import { errorMessage } from '../../services/http';
+// Load details with their ETag; identity/revision checks prevent showing an old result.
 export function useClaim(api: ClaimsGateway, id: string, revision = '') {
   const [result, setResult] = useState<{
     api: ClaimsGateway;
@@ -27,6 +28,7 @@ export function useClaim(api: ClaimsGateway, id: string, revision = '') {
             error: errorMessage(error),
           });
       });
+    // Leaving this view cancels the read, not necessarily processing already on the server.
     return () => {
       active = false;
       controller.abort();

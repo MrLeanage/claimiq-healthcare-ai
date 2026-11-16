@@ -36,6 +36,7 @@ export function ClaimForm({
   onCancel,
   onDirtyChange,
 }: Props) {
+  // Controlled inputs update local state; typing does not persist anything.
   const [fields, setFields] = useState({
     patientReference: initial?.patientReference ?? '',
     providerReference: initial?.providerReference ?? '',
@@ -47,6 +48,7 @@ export function ClaimForm({
   const [validation, setValidation] = useState('');
   const heading = useRef<HTMLHeadingElement>(null);
   const disabled = busy || locked;
+  // Completeness covers hidden tabs too. Format/business checks still run on submit.
   const requiredValuesPresent =
     Object.values(fields).every((value) => value.trim().length > 0) &&
     hasRequiredContextValues(context);
@@ -74,6 +76,7 @@ export function ClaimForm({
         'Complete the patient/provider references, currency, and a valid service date.',
       );
   }
+  // Frontend validation gives feedback; backend/domain checks remain authoritative.
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (disabled || !requiredValuesPresent) return;

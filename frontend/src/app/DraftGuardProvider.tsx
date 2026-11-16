@@ -71,6 +71,7 @@ function LeaveDialog({
     </div>
   );
 }
+// Coordinate dirty/saving state across routes; navigation does not silently discard form input.
 export function DraftGuardProvider({ children }: { children: ReactNode }) {
   const dirty = useRef(false);
   const saving = useRef(false);

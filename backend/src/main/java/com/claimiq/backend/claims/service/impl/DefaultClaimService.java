@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
+// Each public write use case is one transaction, including its lifecycle audit event.
 @Transactional
 public class DefaultClaimService implements ClaimService {
     private final ClaimRepository repository;
@@ -106,6 +107,7 @@ public class DefaultClaimService implements ClaimService {
         }
     }
 
+    // Flush obtains database-generated metadata; commit still includes the following audit write.
     private ClaimResponse persist(Claim claim, String action, ClaimStatus previous) {
         Claim saved = repository.saveAndFlush(claim);
         audit.save(new ClaimAuditEvent(saved, access.subject(), action, previous));

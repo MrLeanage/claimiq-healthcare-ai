@@ -8,6 +8,7 @@ interface Result {
   data: ClaimPage | null;
   error: string;
 }
+// This hook owns list loading/error state, separate from rendering and HTTP transport.
 export function useClaims(api: ClaimsGateway, page: number) {
   const [result, setResult] = useState<Result | null>(null);
   const [revision, setRevision] = useState(0);
@@ -30,6 +31,7 @@ export function useClaims(api: ClaimsGateway, page: number) {
             error: errorMessage(error),
           });
       });
+    // Abort saves work; active also prevents late responses from updating obsolete state.
     return () => {
       active = false;
       controller.abort();

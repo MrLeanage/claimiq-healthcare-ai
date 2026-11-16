@@ -69,6 +69,7 @@ function Stop-All {
     Show-Status
     if($failures.Count){throw ($failures -join [Environment]::NewLine)}
 }
+# Start dependencies in order. Roll back only newly started services if any stage fails.
 function Start-All {
     $before=@{}
     foreach($name in $order){$before[$name]=Invoke-Component $name 'status'}

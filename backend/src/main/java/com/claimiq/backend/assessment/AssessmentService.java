@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
+// Orchestrates access and version checks; AssessmentClient owns external inference transport.
 @Service
 public class AssessmentService {
     private final ClaimService claims;
@@ -32,6 +33,7 @@ public class AssessmentService {
                     "Complete insurance, diagnoses and billed services before assessment");
         }
         AssessmentResult result = client.assess(claim.context());
+        // A concurrent edit makes the explanation stale even if inference itself succeeded.
         if (claims.get(id).version() != claim.version()) throw new ClaimVersionConflictException();
         return new Response(id, claim.version(), result);
     }

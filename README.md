@@ -38,6 +38,7 @@ health checks, shows service status and prints the current demo tokens. Use
 `.\dev.cmd stop`, `restart`, `status`, `logs` or `tokens` from this folder.
 
 - [Testing](docs/testing/README.md)
+- [Code walkthrough and interview preparation](docs/INTERVIEW_WALKTHROUGH.md)
 - [Security boundaries](docs/security/README.md)
 - [Operations](docs/operations/README.md)
 

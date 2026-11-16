@@ -7,11 +7,13 @@ import type {
 } from '../features/claims/model';
 import { request, type Fetcher } from './http';
 const base = '/api/v1/claims';
+// HTTP adapter for ClaimsGateway: URL/verb/serialization details stay out of components.
 export class HttpClaimsGateway implements ClaimsGateway {
   constructor(
     private readonly token: string,
     private readonly fetcher: Fetcher = fetch,
   ) {}
+  // GET is fetch's default. Signal is optional; the type assertion does not validate JSON.
   async list(page: number, signal?: AbortSignal): Promise<ClaimPage> {
     const response = await request(
       this.fetcher,
@@ -21,6 +23,7 @@ export class HttpClaimsGateway implements ClaimsGateway {
     );
     return response.json() as Promise<ClaimPage>;
   }
+  // Assess an existing version, not unsaved form input. Java loads the authorized claim.
   async assess(id: string, etag: string, signal?: AbortSignal) {
     const response = await request(
       this.fetcher,
@@ -50,6 +53,7 @@ export class HttpClaimsGateway implements ClaimsGateway {
       }),
     );
   }
+  // Return JSON plus the exact quoted version header; never invent a missing ETag.
   private async readVersioned(response: Response): Promise<VersionedClaim> {
     const etag = response.headers.get('ETag');
     if (!etag || !/^"\d+"$/.test(etag))
@@ -66,6 +70,7 @@ export class HttpClaimsGateway implements ClaimsGateway {
       ),
     );
   }
+  // Reusing a creation key lets the backend replay a committed request after a lost response.
   create(input: ClaimInput, idempotencyKey?: string) {
     return this.write(base, 'POST', input, undefined, idempotencyKey);
   }

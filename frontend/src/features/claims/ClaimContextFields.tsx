@@ -7,6 +7,7 @@ interface Props {
   maxDate: string;
   section?: 'all' | 'insurance' | 'clinical' | 'services';
 }
+// Props provide current values; onChange sends new copies back to the parent form.
 export function ClaimContextFields({
   value,
   disabled,

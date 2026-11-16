@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
+// Authentication is already established by Spring Security; this policy enforces use-case access.
 @Component
 public class JwtClaimAccessPolicy implements ClaimAccessPolicy {
     private Authentication authentication() {
@@ -63,6 +64,7 @@ public class JwtClaimAccessPolicy implements ClaimAccessPolicy {
     }
 
     @Override
+    // Owner-only access returns 404 to avoid disclosing whether another user's claim exists.
     public void requireRead(Claim claim) {
         requireReadPermission();
         if (!canReview() && !subject().equals(claim.getOwnerSubject()))

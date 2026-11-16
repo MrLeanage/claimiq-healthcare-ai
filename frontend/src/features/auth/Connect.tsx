@@ -6,6 +6,7 @@ export function Connect({ onConnect }: { onConnect(session: Session): void }) {
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  // Parsing is for UI state only. A real API call verifies backend acceptance.
   async function submit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);

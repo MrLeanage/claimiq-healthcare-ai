@@ -3,6 +3,7 @@
 from datetime import date, datetime, timezone
 from app.ml.model import FEATURES, probability
 
+# Corrections are curated templates, not generated text or verified payer instructions.
 CATALOGUE = {
     "coverage_inactive": (
         "Reported coverage is inactive",
@@ -84,6 +85,7 @@ def assess(payload, model):
     verified = insurance.get("coverageVerifiedOn")
     if verified:
         date.fromisoformat(verified)
+    # Feature order must match FEATURES and the artifact weights: 1 means the indicator is present.
     values = [
         int(coverage == "INACTIVE"),
         int(coverage == "UNKNOWN"),
@@ -95,6 +97,7 @@ def assess(payload, model):
         int(not str(context.get("clinicalSummary") or "").strip()),
     ]
     findings = []
+    # Inference only: no fitting, database access or automatic claim decision occurs here.
     score = probability(model, values)
     for name, value, weight in zip(FEATURES, values, model["weights"], strict=True):
         if value:
@@ -118,12 +121,14 @@ def assess(payload, model):
                     suggestedCorrection=correction,
                 )
             )
+    # Contributions reconstruct the model log-odds; they are not causal percentages.
     findings.sort(key=lambda f: f["contributionLogOdds"], reverse=True)
     return dict(
         modelVersion=model["version"],
         trainingData="SYNTHETIC",
         assessedAt=datetime.now(timezone.utc).isoformat(),
         score=round(score * 100, 1),
+        # Demonstration cutoffs use unrounded output, not validated payer thresholds.
         riskLevel="HIGH" if score >= 0.65 else "MEDIUM" if score >= 0.30 else "LOW",
         interceptLogOdds=model["intercept"],
         findings=findings,

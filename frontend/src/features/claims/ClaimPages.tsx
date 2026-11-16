@@ -107,6 +107,7 @@ function Editor({
   const navigate = useNavigate();
   const guard = useDraftGuard();
   const active = useRef(true);
+  // One key per open editor survives retries, but not a refresh or new form.
   const [creationKey] = useState(() => crypto.randomUUID());
   const markSaving = guard.markSaving;
   useEffect(() => {
@@ -119,6 +120,7 @@ function Editor({
   const [busy, setBusy] = useState(false);
   const [stale, setStale] = useState(false);
   const [error, setError] = useState('');
+  // The form provides validated input; navigate only after the API confirms saving.
   async function save(input: ClaimInput) {
     setBusy(true);
     guard.markSaving(true);

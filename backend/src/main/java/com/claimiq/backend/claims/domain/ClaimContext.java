@@ -9,6 +9,7 @@ public record ClaimContext(
         List<String> diagnosisCodes,
         List<ClaimServiceLine> serviceLines,
         String clinicalSummary) {
+    // Validate and copy collections so a saved context cannot be changed through an input list.
     public ClaimContext {
         if (insurance == null
                 || diagnosisCodes == null

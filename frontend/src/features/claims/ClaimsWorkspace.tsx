@@ -14,6 +14,7 @@ import { ClaimsListPage } from './ClaimsListPage';
 import { ClaimDetailPage, ClaimEditorDialog } from './ClaimPages';
 import { pageNumber } from './routeLinks';
 import { WorkspaceInfoPage } from './WorkspaceInfoPage';
+// Routes select a page; new/edit routes overlay a dialog on the background page.
 export function ClaimsWorkspace({
   api,
   session,
